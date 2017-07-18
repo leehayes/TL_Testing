@@ -126,7 +126,6 @@ class UserPunter(BrowserInstance):
             x = self.driver.find_element_by_xpath(Xpath)
             x.click() # click on the checkbox to deselect
 
-
         # # Submit
         # Xpath = "// input[ @ type = 'submit']"
         # button = self.driver.find_element_by_xpath(Xpath)
