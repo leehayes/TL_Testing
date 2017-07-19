@@ -131,14 +131,6 @@ class UserPunter(BrowserInstance):
         button = self.driver.find_element_by_xpath(Xpath)
         button.click()
 
-
-
-        # < img
-        # alt = "382oofx"
-        # style = "margin:20px 15px 10px 0; display:block;"
-        # width = "105"
-        # src = "http://aphasian.com/ticketlab/images/qrs/382oofx.jpg" >
-
         #Get Ticket ID
         Ticket_id = None
         Xpath = "// img[contains(@src, 'http://aphasian.com/ticketlab/images/qrs/')]"
