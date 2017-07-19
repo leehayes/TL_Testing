@@ -72,7 +72,7 @@ class BrowserInstance:
 
 class UserPunter(BrowserInstance):
     '''
-    A user instance to buy tickets and/or view tickets available
+    A user instance to buy tickets
     '''
     def __init__(self):
         super(UserPunter, self).__init__()
@@ -126,10 +126,10 @@ class UserPunter(BrowserInstance):
             x = self.driver.find_element_by_xpath(Xpath)
             x.click() # click on the checkbox to deselect
 
-        # # Submit
-        # Xpath = "// input[ @ type = 'submit']"
-        # button = self.driver.find_element_by_xpath(Xpath)
-        # button.click()
+        #Submit
+        Xpath = "// input[ @ type = 'submit']"
+        button = self.driver.find_element_by_xpath(Xpath)
+        button.click()
 
         #return event id and event name
         return self.driver.current_url.split("/")[-1]
