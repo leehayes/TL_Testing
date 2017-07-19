@@ -69,6 +69,35 @@ class BrowserInstance:
     def log_out(self, ):
         self.driver.get(self.base_url+"/login/logout")
 
+    def add_venue(self, event_dict=None):
+        '''
+        Populates Base URL /add/venue . This page opens when "Add venue" option selected
+        This is also used when creating first event
+        :param event_dict: defaults to None and takes the default event dict below
+        :return: None
+        '''
+
+        self.driver.get(self.base_url+"/add/venue")
+
+        # Add a venue
+        event_dict = event_dict
+        if event_dict is None:
+            event_dict = {"venue_name": "The Pub",
+                          "capacity": "1000",
+                          "address1": "Hoe Street",
+                          "address2": "Walthamstow",
+                          "town": "London",
+                          "postcode": "E17 9LG"}
+
+        Xpath = "// input[@type = 'text']"
+        fieldsets = self.driver.find_elements_by_xpath(Xpath)
+        for i in fieldsets:
+            i.send_keys(event_dict[i.get_attribute('name')])
+
+        Xpath = "// input[@type='submit']"
+        button = self.driver.find_element_by_xpath(Xpath)
+        button.click()
+
 
 class UserPunter(BrowserInstance):
     '''

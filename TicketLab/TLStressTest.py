@@ -57,7 +57,7 @@ with UserPunter() as punter:
     #Log In
     punter.log_in(username=PUNTER1, password=PUNTER1PASSWORD)
 
-    #get all event ids from a series id (this method could be needed by PVA or Punter
+    #get all event ids from a series id (this method could be needed by PVA or Punter class
     #Nice to have for now!!
 
     #Buy Tickets
