@@ -51,7 +51,7 @@ PUNTER1PASSWORD = Config.PUNTER1PASSWORD
 #######################################BUY MULTIPLE TICKETS FOR A SERIES################################################
 
 #series ID = 6
-#http://aphasian.com/ticketlab/series/id/6
+#baseurl/series/id/6
 #
 with UserPunter() as punter:
     #Log In

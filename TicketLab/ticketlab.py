@@ -109,9 +109,11 @@ class UserPunter(BrowserInstance):
         for event in event_list:
             for purchase in range(qr_codes):
                 print("Event : {} : {} out of {} tickets".format(str(event), str(purchase + 1), str(qr_codes),))
-                x = self.buy_tickets(event, groups_of)
-                ticket_id_list.append(x)
-
+                try:
+                    x = self.buy_tickets(event, groups_of)
+                    ticket_id_list.append(x)
+                except:
+                    print("Unable to create tickets. Will try again")
         return ticket_id_list
 
 
@@ -325,7 +327,7 @@ class StressTest:
     Set up as context manager
     '''
 
-    def __init__(self, check_in_url="http://aphasian.com/ticketlab", proxy=None, username=None, password=None):
+    def __init__(self, check_in_url=Config.URL, proxy=None, username=None, password=None):
         '''
         :param base_url: The home URL, defaults to the aphasian test environment
         :param proxy: Defaults to None, important to use when testing with multiple requests
