@@ -57,18 +57,22 @@ with UserPunter() as punter:
     #Log In
     punter.log_in(username=PUNTER1, password=PUNTER1PASSWORD)
 
-    #get all event ids from a series id (this method could be needed by PVA or Punter class
-    #Nice to have for now!!
 
-    #Buy Tickets
-    #loop through series of events and buy all the tickets in batches of 2
-    x = punter.buy_tickets(382, 2)
-    print("ticket code returned by Buy Tickets : " + x)
+    #get all event ids from a series id
+    ##Nice to have for now!!
+
+    events = [388,]#, 388, 389, 390, 391] #382-386
+    total_tickets = 500
+    groups_of = 5
+
+    #Bulk Buy Tickets
+    x = punter._bulk_buy_tickets(events, total_tickets, groups_of)
+    print(x) #list of ticket id's
 
     #Log Out
-    #punter.log_out()
+    punter.log_out()
 
-#
+
 ############################################RUN STRESS TEST#############################################################
 #
 # with StressTest() as test:

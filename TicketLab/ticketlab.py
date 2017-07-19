@@ -2,7 +2,9 @@ import time
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
+from Config import Config
 
+URL = Config.URL
 
 class BrowserInstance:
     '''
@@ -10,9 +12,9 @@ class BrowserInstance:
     Set up as context manager
     '''
 
-    def __init__(self, base_url="http://aphasian.com/ticketlab", proxy=None, username=None, password=None):
+    def __init__(self, base_url=URL, proxy=None, username=None, password=None):
         '''
-        :param base_url: The home URL, defaults to the aphasian test environment
+        :param base_url: The home URL, defaults to the test environment
         :param proxy: Defaults to None, important to use when testing with multiple requests
         '''
 
@@ -89,6 +91,30 @@ class UserPunter(BrowserInstance):
             button.click()
         return None
 
+    def _bulk_buy_tickets(self, event_list, total_tickets, groups_of):
+        ''' Loops through the events and buys tickets in groups. Built primarily for
+        stress testing purposes
+        :param event_list: List of event ids
+        :param total_tickets: Number of tickets in events (assumes all the same)
+        :param groups_of: The group number for each ticket (must be a multiple of total_tickets)
+        :return: List of ticket ids
+        '''
+
+        qr_codes = int(total_tickets / groups_of)
+
+        # Buy Tickets
+        # loop through series of events and buy all the tickets in batches of 2
+        ticket_id_list = []
+
+        for event in event_list:
+            for purchase in range(qr_codes):
+                print("Event : {} : {} out of {} tickets".format(str(event), str(purchase + 1), str(qr_codes),))
+                x = self.buy_tickets(event, groups_of)
+                ticket_id_list.append(x)
+
+        return ticket_id_list
+
+
     def buy_tickets(self, event_id, no_of_tickets = 1):
         ''' Buy tickets
         Precondition: User session must be logged in as a non-PVA
@@ -133,10 +159,10 @@ class UserPunter(BrowserInstance):
 
         #Get Ticket ID
         Ticket_id = None
-        Xpath = "// img[contains(@src, 'http://aphasian.com/ticketlab/images/qrs/')]"
+        Xpath = "// img[contains(@src, '{}/images/qrs/')]".format(self.base_url)
         img = self.driver.find_element_by_xpath(Xpath)
 
-        #return event id and event name
+        #return ticket id
         return img.get_attribute("src").split("/")[-1].split(".")[0]
 
 
@@ -283,6 +309,15 @@ class UserPVA(BrowserInstance):
 
         return self.driver.current_url.split("/")[-1], seriesname
 
+    @staticmethod
+    def scan_ticket(ticket_url, ticket_id):
+        '''
+        Replicates the process of sending a http request when scanning in a ticket
+        :param ticket_url: url for ticket confirmation
+        :param ticket_id: id that is appended to url http request
+        :return: tuple responce code (200 = ok) followed by accept/reject string
+        '''
+        pass
 
 class StressTest:
     '''
