@@ -1,5 +1,5 @@
 from Config import Config
-from ticketlab import UserPVA, UserPunter
+from ticketlab import UserPVA, UserPunter, StressTest
 from collections import namedtuple
 
 
@@ -52,7 +52,7 @@ PUNTER1PASSWORD = Config.PUNTER1PASSWORD
 
 #series ID = 6
 #http://aphasian.com/ticketlab/series/id/6
-
+#
 with UserPunter() as punter:
     #Log In
     punter.log_in(username=PUNTER1, password=PUNTER1PASSWORD)
@@ -68,4 +68,9 @@ with UserPunter() as punter:
     #Log Out
     #punter.log_out()
 
-
+#
+############################################RUN STRESS TEST#############################################################
+#
+# with StressTest() as test:
+#
+#     test.run()

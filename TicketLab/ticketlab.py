@@ -131,8 +131,21 @@ class UserPunter(BrowserInstance):
         button = self.driver.find_element_by_xpath(Xpath)
         button.click()
 
+
+
+        # < img
+        # alt = "382oofx"
+        # style = "margin:20px 15px 10px 0; display:block;"
+        # width = "105"
+        # src = "http://aphasian.com/ticketlab/images/qrs/382oofx.jpg" >
+
+        #Get Ticket ID
+        Ticket_id = None
+        Xpath = "// img[contains(@src, 'http://aphasian.com/ticketlab/images/qrs/')]"
+        img = self.driver.find_element_by_xpath(Xpath)
+
         #return event id and event name
-        return self.driver.current_url.split("/")[-1]
+        return img.get_attribute("src").split("/")[-1].split(".")[0]
 
 
 
@@ -279,5 +292,47 @@ class UserPVA(BrowserInstance):
         return self.driver.current_url.split("/")[-1], seriesname
 
 
+class StressTest:
+    '''
+    The base class which manages the Selenium instance and provides time logging.
+    Set up as context manager
+    '''
 
+    def __init__(self, check_in_url="http://aphasian.com/ticketlab", proxy=None, username=None, password=None):
+        '''
+        :param base_url: The home URL, defaults to the aphasian test environment
+        :param proxy: Defaults to None, important to use when testing with multiple requests
+        '''
+
+        self.check_in_url = check_in_url
+        self.proxy = proxy
+        self.username = username
+        self.password = password
+
+
+    def __enter__(self):
+        '''
+        Set up Timer
+        :return: self
+        '''
+        self.start = time.time()
+
+        return self
+
+    def __exit__(self, *args):
+        '''
+        Close Selenium browser and calculate time taken
+        *args will accept the following 3 parameters:
+        :param exc_type: Error Handling
+        :param exc_val: Error Handling
+        :param exc_tb: Error Handling
+        :return: None
+        '''
+
+        end = time.time()
+        print('Requests all received : {} seconds'.format(int(end - self.start)))
+
+    def run(self):
+        print("looping through and concurrently sending http get requests")
+        time.sleep(2)
 
