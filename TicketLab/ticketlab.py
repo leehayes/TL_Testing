@@ -1,3 +1,4 @@
+
 import time
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -46,7 +47,7 @@ class BrowserInstance:
         :param exc_tb: Error Handling
         :return: None
         '''
-        time.sleep(10000)
+        #time.sleep(10000)
         self.driver.quit()
         end = time.time()
         print('Browser closed : {} seconds'.format(int(end - self.start)))
@@ -113,7 +114,7 @@ class UserPunter(BrowserInstance):
                     x = self.buy_tickets(event, groups_of)
                     ticket_id_list.append(x)
                 except:
-                    print("Unable to create tickets. Will try again")
+                    print("Unable to create ticket. Will try again")
         return ticket_id_list
 
 
@@ -166,7 +167,6 @@ class UserPunter(BrowserInstance):
 
         #return ticket id
         return img.get_attribute("src").split("/")[-1].split(".")[0]
-
 
 
 class UserPVA(BrowserInstance):
@@ -311,6 +311,29 @@ class UserPVA(BrowserInstance):
 
         return self.driver.current_url.split("/")[-1], seriesname
 
+    def get_tickets(self, eventid):
+        self.driver.get(self.base_url + "/index.php/event/allocation/{}".format(str(eventid)))
+        eventid = eventid
+
+        Xpath = "// tr[ *]"
+        table = self.driver.find_elements_by_xpath(Xpath)
+        table = table[2:-1] #trim headers and footer
+        table_length = len(table)
+        listoftickets = []
+
+        while len(table[0].text) == 0: #make sure all cells are populated
+            print("Table not yet populated, sleeping......")
+            time.sleep(2)
+
+        for row in range(table_length): # bug when looping through table - Use len counter instead
+                cells = table[row].find_elements_by_tag_name("td")
+                listoftickets.append({"ticket_id": cells[4].text,
+                                      "event_id": str(eventid),
+                                      "no_of_tickets": cells[3].text,
+                                      "user": cells[2].text,
+                                      })
+        return listoftickets
+
     @staticmethod
     def scan_ticket(ticket_url, ticket_id):
         '''
@@ -321,23 +344,15 @@ class UserPVA(BrowserInstance):
         '''
         pass
 
-class StressTest:
+
+class StressTest():
     '''
-    The base class which manages the Selenium instance and provides time logging.
-    Set up as context manager
+    This context manager will generate concurrent http post messages
+    to replicate scanning a large number of tickets
     '''
 
-    def __init__(self, check_in_url=Config.URL, proxy=None, username=None, password=None):
-        '''
-        :param base_url: The home URL, defaults to the aphasian test environment
-        :param proxy: Defaults to None, important to use when testing with multiple requests
-        '''
-
-        self.check_in_url = check_in_url
-        self.proxy = proxy
-        self.username = username
-        self.password = password
-
+    def __init__(self,):
+        pass
 
     def __enter__(self):
         '''
@@ -350,7 +365,7 @@ class StressTest:
 
     def __exit__(self, *args):
         '''
-        Close Selenium browser and calculate time taken
+        On completion of responses, calculate time taken
         *args will accept the following 3 parameters:
         :param exc_type: Error Handling
         :param exc_val: Error Handling
@@ -361,7 +376,9 @@ class StressTest:
         end = time.time()
         print('Requests all received : {} seconds'.format(int(end - self.start)))
 
-    def run(self):
+    def run(self, listofticket_ids):
         print("looping through and concurrently sending http get requests")
-        time.sleep(2)
+        print(listofticket_ids)
+        for ticket in listofticket_ids:
+            UserPVA.scan_ticket(Config.URL, ticket)
 
