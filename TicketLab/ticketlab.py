@@ -345,14 +345,22 @@ class UserPVA(BrowserInstance):
         :param ticket_id: id that is appended to url http request
         :return: tuple responce code (200 = ok) followed by accept/reject string
         '''
-
         with async_timeout.timeout(10):
             async with session.get(url) as response:
-
                 text = await response.text()
-                x = response.status
+                status = response.status
+                if "has not started yet" in text:
+                    msg = "NOT_STARTED"
+                elif "Valid ticket" in text:
+                    msg = "VALID"
+                elif "This ticket has already been claimed." in text:
+                    msg = "DUPLICATE"
+                elif "You need to sign in to be able to acknowledge ticket codes" in text:
+                    msg = "NOT_LOGGED_IN"
+                else:
+                    msg = "ERROR"
 
-        return x, text[0:20]
+        return status, msg
 
 
 
@@ -395,51 +403,36 @@ class StressTest():
         :return: Dict - Several results need to be returned....
         '''
 
-        print("looping through and concurrently sending http get requests")
-
-        #make this concurrent
-
-
-        async def do_work(task_name, work_queue):
-            results = []
-            while not work_queue.empty():
-                queue_item = await work_queue.get()
-                #print('{0} scanned ticket: {1}'.format(task_name, queue_item))
-
-                async with aiohttp.ClientSession() as session:
-                    result = await UserPVA.scan_ticket(session, Config.URL+"/ticket/"+queue_item)
-                    print(result)
-
-            #     result = await UserPVA.scan_ticket(Config.URL+"/ticket/"+queue_item)
-            #     results.append(result)
-            # return results
+        loop = asyncio.get_event_loop()
 
         q = asyncio.Queue()
-
         for ticket in listofticket_ids:
             q.put_nowait(ticket)
 
-        print(q)
+        async def worker(work_queue):
+            worker_results = []
+            async with aiohttp.ClientSession() as session:
+                while not work_queue.empty():
+                    queue_item = await work_queue.get()
+                    worker_result = await UserPVA.scan_ticket(session, Config.URL+"/ticket/"+queue_item)
+                    worker_results.append(worker_result)
+            return worker_results
 
-        loop = asyncio.get_event_loop()
-
-        tasks = [
-            asyncio.ensure_future(do_work('scanner1', q)),
-            asyncio.ensure_future(do_work('scanner2', q)),
-            asyncio.ensure_future(do_work('scanner3', q)),
-            asyncio.ensure_future(do_work('scanner4', q)),
-            asyncio.ensure_future(do_work('scanner5', q)),
-            asyncio.ensure_future(do_work('scanner6', q)),
-            asyncio.ensure_future(do_work('scanner7', q)),
-            asyncio.ensure_future(do_work('scanner8', q))]
+        #8 scanners
+        tasks = []
+        for i in range(8):
+            tasks.append(asyncio.ensure_future(worker(q)))
 
         completed_results = loop.run_until_complete(asyncio.gather(*tasks))
+
+        results = []
         for result in completed_results:
-            print(result)
+            results = results + result
+
+        print(str(len(results)), "results returned")
+        print(results)
+
 
         loop.close()
 
-
-
-            #UserPVA.scan_ticket(Config.URL, "382fnqh")
 
