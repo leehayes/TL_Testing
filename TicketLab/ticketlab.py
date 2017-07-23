@@ -1,5 +1,10 @@
 
 import time
+
+import aiohttp
+import asyncio
+import async_timeout
+
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
@@ -176,7 +181,6 @@ class UserPVA(BrowserInstance):
     def __init__(self):
         super(UserPVA, self).__init__()
 
-
     def add_venue(self, event_dict=None):
         '''
         Populates Base URL /add/venue . This page opens when "Add venue" option selected
@@ -205,7 +209,6 @@ class UserPVA(BrowserInstance):
         Xpath = "// input[@type='submit']"
         button = self.driver.find_element_by_xpath(Xpath)
         button.click()
-
 
     def CreateNewEvent(self, eventdetails):
         ''' Set Up a New Event
@@ -335,14 +338,21 @@ class UserPVA(BrowserInstance):
         return listoftickets
 
     @staticmethod
-    def scan_ticket(ticket_url, ticket_id):
+    async def scan_ticket(session, url):
         '''
         Replicates the process of sending a http request when scanning in a ticket
         :param ticket_url: url for ticket confirmation
         :param ticket_id: id that is appended to url http request
         :return: tuple responce code (200 = ok) followed by accept/reject string
         '''
-        pass
+
+        with async_timeout.timeout(10):
+            async with session.get(url) as response:
+                text = await response.text()
+
+        return 200, text[0:20]
+
+
 
 
 class StressTest():
@@ -377,8 +387,57 @@ class StressTest():
         print('Requests all received : {} seconds'.format(int(end - self.start)))
 
     def run(self, listofticket_ids):
+        '''
+        This is the concurrent method which will call mulitple HTTP requests for a list of tickets and dupes.
+        :param listofticket_ids:
+        :return: Dict - Several results need to be returned....
+        '''
+
         print("looping through and concurrently sending http get requests")
-        print(listofticket_ids)
+
+        #make this concurrent
+
+
+        async def do_work(task_name, work_queue):
+            results = []
+            while not work_queue.empty():
+                queue_item = await work_queue.get()
+                #print('{0} scanned ticket: {1}'.format(task_name, queue_item))
+
+                async with aiohttp.ClientSession() as session:
+                    result = await UserPVA.scan_ticket(session, Config.URL+"/ticket/"+queue_item)
+                    print(result)
+
+            #     result = await UserPVA.scan_ticket(Config.URL+"/ticket/"+queue_item)
+            #     results.append(result)
+            # return results
+
+        q = asyncio.Queue()
+
         for ticket in listofticket_ids:
-            UserPVA.scan_ticket(Config.URL, ticket)
+            q.put_nowait(ticket)
+
+        print(q)
+
+        loop = asyncio.get_event_loop()
+
+        tasks = [
+            asyncio.ensure_future(do_work('scanner1', q)),
+            asyncio.ensure_future(do_work('scanner2', q)),
+            asyncio.ensure_future(do_work('scanner3', q)),
+            asyncio.ensure_future(do_work('scanner4', q)),
+            asyncio.ensure_future(do_work('scanner5', q)),
+            asyncio.ensure_future(do_work('scanner6', q)),
+            asyncio.ensure_future(do_work('scanner7', q)),
+            asyncio.ensure_future(do_work('scanner8', q))]
+
+        completed_results = loop.run_until_complete(asyncio.gather(*tasks))
+        for result in completed_results:
+            print(result)
+
+        loop.close()
+
+
+
+            #UserPVA.scan_ticket(Config.URL, "382fnqh")
 
