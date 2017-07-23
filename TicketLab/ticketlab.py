@@ -348,9 +348,11 @@ class UserPVA(BrowserInstance):
 
         with async_timeout.timeout(10):
             async with session.get(url) as response:
-                text = await response.text()
 
-        return 200, text[0:20]
+                text = await response.text()
+                x = response.status
+
+        return x, text[0:20]
 
 
 
