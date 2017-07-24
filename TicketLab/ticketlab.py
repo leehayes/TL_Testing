@@ -1,6 +1,8 @@
 
 import time
 
+from http.cookies import SimpleCookie
+
 import aiohttp
 import asyncio
 import async_timeout
@@ -409,14 +411,13 @@ class StressTest():
 
 
 
-        #get session id cookie
-        session_id = None
-        with UserPVA() as user:
-            # Log In
-            user.log_in(username=Config.PVAUSER, password=Config.PVAPASSWORD)
-            session_cookies = {'Cookie': user.get_cookies()}
-
-
+        # #get session id cookie
+        # session_id = None
+        # with UserPVA() as user:
+        #     # Log In
+        #     user.log_in(username=Config.PVAUSER, password=Config.PVAPASSWORD)
+        #     session_cookies = {'Cookie':  user.get_cookies()[0]}
+        #     print(session_cookies)
 
         loop = asyncio.get_event_loop()
 
@@ -426,9 +427,10 @@ class StressTest():
 
         async def worker(work_queue):
             worker_results = []
-            print(session_cookies)
-            async with aiohttp.ClientSession(cookies=session_cookies) as session:
-            #async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession() as session:
+                #login to get session cookie
+                login_data = {'redirect': 'login', 'email': Config.PVAUSER, 'password': Config.PVAPASSWORD,}
+                r = await session.post(Config.URL+'/index.php/login/login_action', data=login_data)
                 while not work_queue.empty():
                     queue_item = await work_queue.get()
                     worker_result = await UserPVA.scan_ticket(session, Config.URL+"/ticket/"+queue_item)
@@ -448,7 +450,6 @@ class StressTest():
 
         print(str(len(results)), "results returned")
         print(results)
-
 
         loop.close()
 
