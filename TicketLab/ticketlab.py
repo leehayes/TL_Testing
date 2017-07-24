@@ -337,6 +337,10 @@ class UserPVA(BrowserInstance):
                                       })
         return listoftickets
 
+    def get_cookies(self):
+        cookies = self.driver.get_cookies()
+        return cookies
+
     @staticmethod
     async def scan_ticket(session, url):
         '''
@@ -403,6 +407,17 @@ class StressTest():
         :return: Dict - Several results need to be returned....
         '''
 
+
+
+        #get session id cookie
+        session_id = None
+        with UserPVA() as user:
+            # Log In
+            user.log_in(username=Config.PVAUSER, password=Config.PVAPASSWORD)
+            session_cookies = {'Cookie': user.get_cookies()}
+
+
+
         loop = asyncio.get_event_loop()
 
         q = asyncio.Queue()
@@ -411,7 +426,9 @@ class StressTest():
 
         async def worker(work_queue):
             worker_results = []
-            async with aiohttp.ClientSession() as session:
+            print(session_cookies)
+            async with aiohttp.ClientSession(cookies=session_cookies) as session:
+            #async with aiohttp.ClientSession() as session:
                 while not work_queue.empty():
                     queue_item = await work_queue.get()
                     worker_result = await UserPVA.scan_ticket(session, Config.URL+"/ticket/"+queue_item)
