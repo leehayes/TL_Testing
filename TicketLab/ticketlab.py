@@ -327,16 +327,22 @@ class UserPVA(BrowserInstance):
         listoftickets = []
 
         while len(table[0].text) == 0: #make sure all cells are populated
-            print("Table not yet populated, sleeping......")
+            #print("Table not yet populated, sleeping......")
             time.sleep(2)
 
         for row in range(table_length): # bug when looping through table - Use len counter instead
                 cells = table[row].find_elements_by_tag_name("td")
-                listoftickets.append({"ticket_id": cells[4].text,
-                                      "event_id": str(eventid),
-                                      "no_of_tickets": cells[3].text,
-                                      "user": cells[2].text,
-                                      })
+                try:
+                    listoftickets.append({"ticket_id": cells[4].text,
+                                          "event_id": str(eventid),
+                                          "no_of_tickets": cells[3].text,
+                                          "user": cells[2].text,
+                                          })
+                except:
+                    #In the event of some tickets being "Already admitted", skip the header and continue
+                    #collecting ticket ids
+                    pass
+
         return listoftickets
 
     def get_cookies(self):
@@ -351,7 +357,7 @@ class UserPVA(BrowserInstance):
         :param ticket_id: id that is appended to url http request
         :return: tuple responce code (200 = ok) followed by accept/reject string
         '''
-        with async_timeout.timeout(10):
+        with async_timeout.timeout(30):
             async with session.get(url) as response:
                 text = await response.text()
                 status = response.status
@@ -400,25 +406,14 @@ class StressTest():
         '''
 
         end = time.time()
-        print('Requests all received : {} seconds'.format(int(end - self.start)))
+        print('Responses all received : {} seconds'.format(int(end - self.start)))
 
     def run(self, listofticket_ids):
         '''
         This is the concurrent method which will call mulitple HTTP requests for a list of tickets and dupes.
         :param listofticket_ids:
-        :return: Dict - Several results need to be returned....
+        :return: Dict - Returns 2 dicts of count of different responses and status codes
         '''
-
-
-
-        # #get session id cookie
-        # session_id = None
-        # with UserPVA() as user:
-        #     # Log In
-        #     user.log_in(username=Config.PVAUSER, password=Config.PVAPASSWORD)
-        #     session_cookies = {'Cookie':  user.get_cookies()[0]}
-        #     print(session_cookies)
-
         loop = asyncio.get_event_loop()
 
         q = asyncio.Queue()
@@ -427,16 +422,19 @@ class StressTest():
 
         async def worker(work_queue):
             worker_results = []
-            async with aiohttp.ClientSession() as session:
-                #login to get session cookie
-                login_data = {'redirect': 'login', 'email': Config.PVAUSER, 'password': Config.PVAPASSWORD,}
-                r = await session.post(Config.URL+'/index.php/login/login_action', data=login_data)
-                while not work_queue.empty():
-                    queue_item = await work_queue.get()
-                    worker_result = await UserPVA.scan_ticket(session, Config.URL+"/ticket/"+queue_item)
-                    worker_results.append(worker_result)
-            return worker_results
-
+            try:
+                async with aiohttp.ClientSession() as session:
+                    #login to get session cookie
+                    login_data = {'redirect': 'login', 'email': Config.PVAUSER, 'password': Config.PVAPASSWORD,}
+                    r = await session.post(Config.URL+'/index.php/login/login_action', data=login_data)
+                    while not work_queue.empty():
+                        queue_item = await work_queue.get()
+                        worker_result = await UserPVA.scan_ticket(session, Config.URL+"/ticket/"+queue_item)
+                        worker_results.append(worker_result)
+            except:
+                print("Error on worker thread - Closing worker")
+                return worker_results
+            return  worker_results
         #8 scanners
         tasks = []
         for i in range(8):
@@ -448,9 +446,14 @@ class StressTest():
         for result in completed_results:
             results = results + result
 
-        print(str(len(results)), "results returned")
-        print(results)
+
+        results_dict = {}
+        status_dict = {}
+        for result in results:
+            results_dict[result[1]] = results_dict.get(result[1], 0) + 1
+            status_dict[result[0]] = status_dict.get(result[0], 0) + 1
+
+        return results_dict, status_dict
 
         loop.close()
-
 

@@ -1,3 +1,5 @@
+import time
+
 from pprint import pprint
 from collections import namedtuple
 
@@ -75,38 +77,44 @@ PUNTER1PASSWORD = Config.PUNTER1PASSWORD
 #
 ############################################RUN STRESS TEST#############################################################
 
-listofevents = [382,] # 383, 384, 385, 386, 387, 388, 389, 390, 391]
+listofevents = [382, 383, 384, 385, 386, 387, 388, 389, 390, 391]
 
-# listoftickets = []
-#
-# # Get Ticket IDs for Events
-# with UserPVA() as user:
-#     # Log In
-#     user.log_in(username=PVAUSER, password=PVAPASSWORD)
-#     for event in listofevents:
-#         print("Getting ticket ids for {}".format(str(event)))
-#         listoftickets = user.get_tickets(event)
-#     #Log Out
-#     user.log_out()
-#
-# listofticket_ids = [d['ticket_id'] for d in listoftickets]
+listoftickets = []
+
+# Get Ticket IDs for Events
+with UserPVA() as user:
+    # Log In
+    user.log_in(username=PVAUSER, password=PVAPASSWORD)
+    for event in listofevents:
+        print("Getting ticket ids for {}".format(str(event)))
+        listoftickets = listoftickets + user.get_tickets(event)
+    #Log Out
+    user.log_out()
+
+listofticket_ids = [d['ticket_id'] for d in listoftickets]
 
 
 with StressTest() as test:
     #Event 382
-    dummy_ticket_list = ['382fnqh', '382dggn', '382duru', '382dbsi', '382xsir','382fnqh', '382dggn', '382duru', '382dbsi', '382xsir','382fnqh', '382dggn', '382duru', '382dbsi', '382xsir']
-    listofticket_ids = dummy_ticket_list
+    #dummy_ticket_list = ['382fnqh', '382dggn', '382duru', '382dbsi', '382xsir','382fnqh', '382dggn', '382duru', '382dbsi', '382xsir','382fnqh', '382dggn', '382duru', '382dbsi', '382xsir']
+    #listofticket_ids = dummy_ticket_list
+
+
 
     #Buy all the tickets!
-    test.run(listofticket_ids) # second param of how many tickets to dupe scan (random from listofticket_ids list)
-
-
-
-    #DICTIONARY of the following results expected from the run/scan ticket/stress test (choose the correct location for each)
-    #return total number of scans
-    #return count of successful scans/unsuccessful/duplicate scans
-    #return number of "too soon" scans (should be zero)
-    #return count of list of ticket ids
-    #return no of dupe requests
+    print("Testing", len(listofticket_ids), "tickets...... pls wait")
+    time.sleep(5)
+    x = test.run(listofticket_ids) # add a second param of how many tickets to dupe scan (random from listofticket_ids list)
+    print("\n")
+    print("-----------------")
+    count = sum(list(x[1].values()))
+    print(str(count), "results returned")
+    print("-----------------")
+    print("Response Messages")
+    print(x[0])
+    print("-----------------")
+    print("Status Codes")
+    print(x[1])
+    print("\n")
 
 
