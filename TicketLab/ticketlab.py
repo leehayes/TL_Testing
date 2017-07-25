@@ -1,8 +1,18 @@
+
 import time
+
+from http.cookies import SimpleCookie
+
+import aiohttp
+import asyncio
+import async_timeout
+
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
+from Config import Config
 
+URL = Config.URL
 
 class BrowserInstance:
     '''
@@ -10,9 +20,9 @@ class BrowserInstance:
     Set up as context manager
     '''
 
-    def __init__(self, base_url="http://aphasian.com/ticketlab", proxy=None, username=None, password=None):
+    def __init__(self, base_url=URL, proxy=None, username=None, password=None):
         '''
-        :param base_url: The home URL, defaults to the aphasian test environment
+        :param base_url: The home URL, defaults to the test environment
         :param proxy: Defaults to None, important to use when testing with multiple requests
         '''
 
@@ -44,7 +54,7 @@ class BrowserInstance:
         :param exc_tb: Error Handling
         :return: None
         '''
-        time.sleep(10000)
+        #time.sleep(10000)
         self.driver.quit()
         end = time.time()
         print('Browser closed : {} seconds'.format(int(end - self.start)))
@@ -72,7 +82,7 @@ class BrowserInstance:
 
 class UserPunter(BrowserInstance):
     '''
-    A user instance to buy tickets and/or view tickets available
+    A user instance to buy tickets
     '''
     def __init__(self):
         super(UserPunter, self).__init__()
@@ -88,6 +98,32 @@ class UserPunter(BrowserInstance):
         for click in range(times):
             button.click()
         return None
+
+    def _bulk_buy_tickets(self, event_list, total_tickets, groups_of):
+        ''' Loops through the events and buys tickets in groups. Built primarily for
+        stress testing purposes
+        :param event_list: List of event ids
+        :param total_tickets: Number of tickets in events (assumes all the same)
+        :param groups_of: The group number for each ticket (must be a multiple of total_tickets)
+        :return: List of ticket ids
+        '''
+
+        qr_codes = int(total_tickets / groups_of)
+
+        # Buy Tickets
+        # loop through series of events and buy all the tickets in batches of 2
+        ticket_id_list = []
+
+        for event in event_list:
+            for purchase in range(qr_codes):
+                print("Event : {} : {} out of {} tickets".format(str(event), str(purchase + 1), str(qr_codes),))
+                try:
+                    x = self.buy_tickets(event, groups_of)
+                    ticket_id_list.append(x)
+                except:
+                    print("Unable to create ticket. Will try again")
+        return ticket_id_list
+
 
     def buy_tickets(self, event_id, no_of_tickets = 1):
         ''' Buy tickets
@@ -126,14 +162,18 @@ class UserPunter(BrowserInstance):
             x = self.driver.find_element_by_xpath(Xpath)
             x.click() # click on the checkbox to deselect
 
-        # # Submit
-        # Xpath = "// input[ @ type = 'submit']"
-        # button = self.driver.find_element_by_xpath(Xpath)
-        # button.click()
+        #Submit
+        Xpath = "// input[ @ type = 'submit']"
+        button = self.driver.find_element_by_xpath(Xpath)
+        button.click()
 
-        #return event id and event name
-        return self.driver.current_url.split("/")[-1]
+        #Get Ticket ID
+        Ticket_id = None
+        Xpath = "// img[contains(@src, '{}/images/qrs/')]".format(self.base_url)
+        img = self.driver.find_element_by_xpath(Xpath)
 
+        #return ticket id
+        return img.get_attribute("src").split("/")[-1].split(".")[0]
 
 
 class UserPVA(BrowserInstance):
@@ -142,6 +182,35 @@ class UserPVA(BrowserInstance):
     '''
     def __init__(self):
         super(UserPVA, self).__init__()
+
+    def add_venue(self, event_dict=None):
+        '''
+        Populates Base URL /add/venue . This page opens when "Add venue" option selected
+        This is also used when creating first event
+        :param event_dict: defaults to None and takes the default event dict below
+        :return: None
+        '''
+
+        self.driver.get(self.base_url+"/add/venue")
+
+        # Add a venue
+        event_dict = event_dict
+        if event_dict is None:
+            event_dict = {"venue_name": "The Pub",
+                          "capacity": "1000",
+                          "address1": "Hoe Street",
+                          "address2": "Walthamstow",
+                          "town": "London",
+                          "postcode": "E17 9LG"}
+
+        Xpath = "// input[@type = 'text']"
+        fieldsets = self.driver.find_elements_by_xpath(Xpath)
+        for i in fieldsets:
+            i.send_keys(event_dict[i.get_attribute('name')])
+
+        Xpath = "// input[@type='submit']"
+        button = self.driver.find_element_by_xpath(Xpath)
+        button.click()
 
     def CreateNewEvent(self, eventdetails):
         ''' Set Up a New Event
@@ -247,6 +316,144 @@ class UserPVA(BrowserInstance):
 
         return self.driver.current_url.split("/")[-1], seriesname
 
+    def get_tickets(self, eventid):
+        self.driver.get(self.base_url + "/index.php/event/allocation/{}".format(str(eventid)))
+        eventid = eventid
+
+        Xpath = "// tr[ *]"
+        table = self.driver.find_elements_by_xpath(Xpath)
+        table = table[2:-1] #trim headers and footer
+        table_length = len(table)
+        listoftickets = []
+
+        while len(table[0].text) == 0: #make sure all cells are populated
+            #print("Table not yet populated, sleeping......")
+            time.sleep(2)
+
+        for row in range(table_length): # bug when looping through table - Use len counter instead
+                cells = table[row].find_elements_by_tag_name("td")
+                try:
+                    listoftickets.append({"ticket_id": cells[4].text,
+                                          "event_id": str(eventid),
+                                          "no_of_tickets": cells[3].text,
+                                          "user": cells[2].text,
+                                          })
+                except:
+                    #In the event of some tickets being "Already admitted", skip the header and continue
+                    #collecting ticket ids
+                    pass
+
+        return listoftickets
+
+    def get_cookies(self):
+        cookies = self.driver.get_cookies()
+        return cookies
+
+    @staticmethod
+    async def scan_ticket(session, url):
+        '''
+        Replicates the process of sending a http request when scanning in a ticket
+        :param ticket_url: url for ticket confirmation
+        :param ticket_id: id that is appended to url http request
+        :return: tuple responce code (200 = ok) followed by accept/reject string
+        '''
+        with async_timeout.timeout(30):
+            async with session.get(url) as response:
+                text = await response.text()
+                status = response.status
+                if "has not started yet" in text:
+                    msg = "NOT_STARTED"
+                elif "Valid ticket" in text:
+                    msg = "VALID"
+                elif "This ticket has already been claimed." in text:
+                    msg = "DUPLICATE"
+                elif "You need to sign in to be able to acknowledge ticket codes" in text:
+                    msg = "NOT_LOGGED_IN"
+                else:
+                    msg = "ERROR"
+
+        return status, msg
 
 
+
+
+class StressTest():
+    '''
+    This context manager will generate concurrent http post messages
+    to replicate scanning a large number of tickets
+    '''
+
+    def __init__(self,):
+        pass
+
+    def __enter__(self):
+        '''
+        Set up Timer
+        :return: self
+        '''
+        self.start = time.time()
+
+        return self
+
+    def __exit__(self, *args):
+        '''
+        On completion of responses, calculate time taken
+        *args will accept the following 3 parameters:
+        :param exc_type: Error Handling
+        :param exc_val: Error Handling
+        :param exc_tb: Error Handling
+        :return: None
+        '''
+
+        end = time.time()
+        print('Responses all received : {} seconds'.format(int(end - self.start)))
+
+    def run(self, listofticket_ids):
+        '''
+        This is the concurrent method which will call mulitple HTTP requests for a list of tickets and dupes.
+        :param listofticket_ids:
+        :return: Dict - Returns 2 dicts of count of different responses and status codes
+        '''
+        loop = asyncio.get_event_loop()
+
+        q = asyncio.Queue()
+        for ticket in listofticket_ids:
+            q.put_nowait(ticket)
+
+        async def worker(work_queue):
+            worker_results = []
+            try:
+                async with aiohttp.ClientSession() as session:
+                    #login to get session cookie
+                    login_data = {'redirect': 'login', 'email': Config.PVAUSER, 'password': Config.PVAPASSWORD,}
+                    r = await session.post(Config.URL+'/index.php/login/login_action', data=login_data)
+                    while not work_queue.empty():
+                        queue_item = await work_queue.get()
+                        worker_result = await UserPVA.scan_ticket(session, Config.URL+"/ticket/"+queue_item)
+                        worker_results.append(worker_result)
+            except:
+                print("Error on worker thread - Closing worker")
+                return worker_results
+            return  worker_results
+        #8 scanners
+        tasks = []
+        for i in range(8):
+            tasks.append(asyncio.ensure_future(worker(q)))
+
+        completed_results = loop.run_until_complete(asyncio.gather(*tasks))
+
+        results = []
+        for result in completed_results:
+            results = results + result
+
+
+        results_dict = {}
+        status_dict = {}
+        for result in results:
+            results_dict[result[1]] = results_dict.get(result[1], 0) + 1
+            status_dict[result[0]] = status_dict.get(result[0], 0) + 1
+
+        return results_dict, status_dict
+
+        loop.close()
 
