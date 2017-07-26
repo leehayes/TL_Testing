@@ -1,16 +1,12 @@
-
+import asyncio
 import time
 
-from http.cookies import SimpleCookie
-
 import aiohttp
-import asyncio
 import async_timeout
-
+from Config import Config
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
-from Config import Config
 
 URL = Config.URL
 
@@ -128,7 +124,7 @@ class UserPunter(BrowserInstance):
     def buy_tickets(self, event_id, no_of_tickets = 1):
         ''' Buy tickets
         Precondition: User session must be logged in as a non-PVA
-        :param eventid: Event id of ticket purchase
+        :param event_id: int of event id - converted to str
         :param no_of_tickets: (int) Number of tickets to buy - defaults to 1
         :return: int(ticket id)
         '''
@@ -295,7 +291,7 @@ class UserPVA(BrowserInstance):
         :return: Tuple of str Series ID and Name
         '''
         self.driver.get(self.base_url + "/add/series")
-        self.eventlist = eventlist
+        eventlist = eventlist
 
         #Series Name
         Xpath = "// input[@name = 'name']"
@@ -353,8 +349,8 @@ class UserPVA(BrowserInstance):
     async def scan_ticket(session, url):
         '''
         Replicates the process of sending a http request when scanning in a ticket
-        :param ticket_url: url for ticket confirmation
-        :param ticket_id: id that is appended to url http request
+        :param session:
+        :param url: url for ticket confirmation
         :return: tuple responce code (200 = ok) followed by accept/reject string
         '''
         with async_timeout.timeout(30):
@@ -441,6 +437,7 @@ class StressTest():
             tasks.append(asyncio.ensure_future(worker(q)))
 
         completed_results = loop.run_until_complete(asyncio.gather(*tasks))
+        loop.close()
 
         results = []
         for result in completed_results:
@@ -455,5 +452,4 @@ class StressTest():
 
         return results_dict, status_dict
 
-        loop.close()
 
