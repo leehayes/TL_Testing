@@ -1,12 +1,11 @@
 # Created by leehayes at 27/07/2017
+@Login_PVA
 Feature: PVA users can manage their events
   As a Promoter, Venue or Artist I wish to be able to set up, view and edit my events
 
   Scenario: Set up new event
-#THIS FIRST STEP SHOULD BE IN ENVIRONMENT before_event.
-    Given I have logged in with a PVA Email and Password PVA Password
-    When I go to the event creation page
-    Then I'll see PVA Username on the page
+    When I enter and submit a new free event in 1 hours time
+    Then I'll see my event with an ID
 
 
 
