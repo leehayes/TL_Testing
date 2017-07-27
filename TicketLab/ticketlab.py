@@ -3,10 +3,11 @@ import time
 
 import aiohttp
 import async_timeout
-from Config import Config
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
+
+from TL_Testing.TicketLab.Config import Config
 
 URL = Config.URL
 
@@ -75,6 +76,9 @@ class BrowserInstance:
     def log_out(self, ):
         self.driver.get(self.base_url+"/login/logout")
 
+    @property
+    def text(self):
+        return self.driver.page_source
 
 class UserPunter(BrowserInstance):
     '''
