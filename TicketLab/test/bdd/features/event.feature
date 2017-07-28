@@ -4,17 +4,14 @@ Feature: PVA users can manage their events
   As a Promoter, Venue or Artist I wish to be able to set up, view and edit my events
 
   Scenario: Set up new event
-    When I enter and submit a new free event in 1 hours time
+    When I enter and submit a new free event(s) in 1 hours time
     Then I'll see my event with an ID
 
 
+  Scenario: Create 2 events and create a series
+    When
+    Then I'll get a message saying it happened
 
-#
-#  Scenario: Set up new event2
-#    Given I have logged in as a PVA User
-#    When I do this and that
-#    Then I'll get a message saying it happened
-#
 
 #
 #  Scenario Outline: User logs in
@@ -41,6 +38,10 @@ Feature: PVA users can manage their events
 #
 #
 #  Scenario: Add ticket sales sold manually for an event
+#    # Enter steps here
+#
+#
+#  Scenario: Add new venue
 #    # Enter steps here
 #
 #

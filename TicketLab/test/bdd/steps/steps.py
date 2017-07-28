@@ -61,12 +61,18 @@ def step_get_a_msg(context, ):
     pass
 
 
-@when("I enter and submit a new {cost} event in {time_unit} {time_measure} time")
-def step_create_event(context, cost, time_unit, time_measure):
+@when("I enter and submit {no_of_events} new {cost} event in {time_unit} {time_measure} time")
+def step_create_event(context, no_of_events, cost, time_unit, time_measure):
     if cost == "free":
         cost = 0
     else:
         cost = float(cost)
+
+    if no_of_events == "a":
+        no_of_events = 0
+    else:
+        no_of_events = int(no_of_events)
+
 
     if "day" in time_measure:
         event_date = datetime.now() + timedelta(days=int(time_unit))
@@ -91,10 +97,13 @@ def step_create_event(context, cost, time_unit, time_measure):
                               'name day month year hour minute price numTickets'  # starthour startminute
                               ' customField max_sell')
     pass
-    # event_id, event_name = context.browser.CreateNewEvent(EventDetails(name="StressTestEvent:{}".format("BDD"),
-    #                                                            day="25", month="12", year="2017",
-    #                                                            hour="20", minute="30", price="0", numTickets="500",
-    #                                                            # starthour='20', startminute='30',
-    #                                                            customField='Tell me the name of your kid!',
-    #                                                            max_sell='500', )
-    #                                                       )
+
+    for event in range(no_of_events):
+        event_id, event_name = context.browser.CreateNewEvent(
+            EventDetails(name="BDD_Test_Event:{}".format(str(event + 1)),
+                         day="25", month="12", year="2017",
+                         hour="20", minute="30", price="0", numTickets="500",
+                         # starthour='20', startminute='30',
+                         customField='Tell me the name of your kid!',
+                         max_sell='500', )
+            )
