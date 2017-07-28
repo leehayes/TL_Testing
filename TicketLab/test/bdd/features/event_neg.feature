@@ -1,5 +1,5 @@
 ## Created by leehayes at 25/07/2017
-
+@Login_PVA
 Feature: PVA users can manage their events (Negative Tests)
   As a Promoter, Venue or Artist I wish to be able to set up, view and edit my events
 

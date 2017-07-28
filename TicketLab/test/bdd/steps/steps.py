@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from behave import *
 from dateutil.relativedelta import relativedelta
+from hamcrest import *
 
 import TL_Testing.TicketLab.ticketlab as tl
 from TL_Testing.TicketLab.Config import Config
@@ -61,7 +62,7 @@ def step_get_a_msg(context, ):
     pass
 
 
-@when("I enter and submit {no_of_events} new {cost} event in {time_unit} {time_measure} time")
+@when("I enter and submit {no_of_events} new {cost} event(s) in {time_unit} {time_measure} time")
 def step_create_event(context, no_of_events, cost, time_unit, time_measure):
     if cost == "free":
         cost = 0
@@ -69,7 +70,7 @@ def step_create_event(context, no_of_events, cost, time_unit, time_measure):
         cost = float(cost)
 
     if no_of_events == "a":
-        no_of_events = 0
+        no_of_events = 1
     else:
         no_of_events = int(no_of_events)
 
@@ -96,14 +97,22 @@ def step_create_event(context, no_of_events, cost, time_unit, time_measure):
     EventDetails = namedtuple('EventDetails',
                               'name day month year hour minute price numTickets'  # starthour startminute
                               ' customField max_sell')
-    pass
 
+    context.events = []
     for event in range(no_of_events):
         event_id, event_name = context.browser.CreateNewEvent(
             EventDetails(name="BDD_Test_Event:{}".format(str(event + 1)),
-                         day="25", month="12", year="2017",
-                         hour="20", minute="30", price="0", numTickets="500",
+                         day=day, month=month, year=year,
+                         hour=hour, minute=minute, price=cost, numTickets="100",
                          # starthour='20', startminute='30',
                          customField='Tell me the name of your kid!',
-                         max_sell='500', )
+                         max_sell='100', )
             )
+        context.events.append(event_id)
+
+
+@then("I'll see my event(s) with an ID")
+def step_event_id(context, ):
+    no_of_events_created = len(context.events)
+    context.events = []
+    assert_that(no_of_events_created, greater_than(0))

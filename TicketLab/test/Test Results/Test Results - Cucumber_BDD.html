@@ -594,9 +594,8 @@
 <body>
 <div id="container">
     <div id="header">
-        <div class="time">1 m 10 s</div>
-        <h1>Cucumber BDD: <strong><span class="total">14 total, </span><span class="failed">1 failed, </span><span
-                class="passed">13 passed</span></strong>
+        <h1>Cucumber BDD: <strong><span class="total">2 total, </span><span class="passed">1 passed, </span><span
+                class="skipped">1 skipped</span></strong>
         </h1>
         <div id="treecontrol">
             <ul>
@@ -612,139 +611,22 @@
     </div>
     <div id="content">
         <ul id="tree">
-            <li xmlns="" class="level top failed open">
-<span><em class="time">
-<div class="time">8 ms</div>
-</em>PVA users can manage their events</span>
+            <li class="level test" xmlns="">
+                <span><em class="time"></em><em class="status">passed</em>PVA users can manage their events</span>
                 <ul>
-                    <li class="level suite failed open">
-<span><em class="time">
-<div class="time">8 ms</div>
-</em>Set up new event</span>
-                        <ul>
-                            <li class="level test">
-<span><em class="time">
-<div class="time">8 ms</div>
-</em><em class="status">passed</em>When I enter and submit a new free event in 1 hours time</span>
-                                <ul>
-                                    <li class="text">
-                                        <span class="stdout">27 7 2017 23 57<br/></span>
-                                    </li>
-                                </ul>
-                            </li>
-                            <li class="level test failed open">
-<span><em class="time">
-<div class="time">0 ms</div>
-</em><em class="status">failed</em>Then I'll see my event with an ID</span>
-                                <ul>
-                                    <li class="text">
-                                        <span class="stderr">Test undefined<br/>Please define test<br/></span>
-                                    </li>
-                                </ul>
-                            </li>
-                        </ul>
+                    <li class="text">
+                        <span class="stdout">Empty test suite.<br/></span>
                     </li>
                 </ul>
             </li>
-            <li class="level top open">
-<span><em class="time">
-<div class="time">31.87 s</div>
-</em>Users can log in and out</span>
+            <li class="level test ignored open">
+                <span><em class="time"></em><em class="status">skipped</em>PVA users can manage their events (Negative Tests)</span>
                 <ul>
-                    <li class="level suite open">
-<span><em class="time">
-<div class="time">15.61 s</div>
-</em>Log in and out as a PVA user</span>
-                        <ul>
-                            <li class="level test">
-<span><em class="time">
-<div class="time">14.46 s</div>
-</em><em class="status">passed</em>Given I have logged in with PVA Email and Password PVA Password</span>
-                            </li>
-                            <li class="level test">
-<span><em class="time">
-<div class="time">32 ms</div>
-</em><em class="status">passed</em>Then I'll see PVA Username on the page</span>
-                            </li>
-                            <li class="level test">
-<span><em class="time">
-<div class="time">1.07 s</div>
-</em><em class="status">passed</em>Given I click the logout button</span>
-                            </li>
-                            <li class="level test">
-<span><em class="time">
-<div class="time">40 ms</div>
-</em><em class="status">passed</em>Then I am logged out</span>
-                            </li>
-                        </ul>
+                    <li class="text">
+                        <span class="stderr">  File &quot;C:\Program Files\JetBrains\PyCharm 2017.1.5\helpers\pycharm\behave_runner.py&quot;, line 306, in &lt;module&gt;<br/>    _BehaveRunner(my_config, base_dir).run()<br/>  File &quot;C:\Program Files\JetBrains\PyCharm 2017.1.5\helpers\pycharm\_bdd_utils.py&quot;, line 96, in run<br/>    self._run_tests()<br/>  File &quot;C:\Program Files\JetBrains\PyCharm 2017.1.5\helpers\pycharm\behave_runner.py&quot;, line 221, in _run_tests<br/>    self.__real_runner.run()<br/>  File &quot;C:\Users\leeha\Anaconda3\lib\site-packages\behave\runner.py&quot;, line 672, in run<br/>    return self.run_with_paths()<br/>  File &quot;C:\Users\leeha\Anaconda3\lib\site-packages\behave\runner.py&quot;, line 693, in run_with_paths<br/>    return self.run_model()<br/>  File &quot;C:\Program Files\JetBrains\PyCharm 2017.1.5\helpers\pycharm\behave_runner.py&quot;, line 119, in run_model<br/>    return super(_RunnerWrapper, self).run_model(features)<br/>  File &quot;C:\Users\leeha\Anaconda3\lib\site-packages\behave\runner.py&quot;, line 483, in run_model<br/>    failed = feature.run(self)<br/>  File &quot;C:\Users\leeha\Anaconda3\lib\site-packages\behave\model.py&quot;, line 520, in run<br/>    scenario.mark_skipped()<br/>  File &quot;C:\Users\leeha\Anaconda3\lib\site-packages\behave\model.py&quot;, line 817, in mark_skipped<br/>    assert self.status == &quot;skipped&quot;, &quot;OOPS: scenario.status=%s&quot; % self.status<br/>AssertionError: OOPS: scenario.status=passed<br/></span>
                     </li>
-                    <li class="level suite open">
-<span><em class="time">
-<div class="time">16.26 s</div>
-</em>Log in and out as a Punter user</span>
-                        <ul>
-                            <li class="level test">
-<span><em class="time">
-<div class="time">15.00 s</div>
-</em><em class="status">passed</em>Given I have logged in with Punter Email and Password Punter Password</span>
-                            </li>
-                            <li class="level test">
-<span><em class="time">
-<div class="time">24 ms</div>
-</em><em class="status">passed</em>Then I'll see Punter Username on the page</span>
-                            </li>
-                            <li class="level test">
-<span><em class="time">
-<div class="time">1.21 s</div>
-</em><em class="status">passed</em>Given I click the logout button</span>
-                            </li>
-                            <li class="level test">
-<span><em class="time">
-<div class="time">22 ms</div>
-</em><em class="status">passed</em>Then I am logged out</span>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
-            </li>
-            <li class="level top open">
-<span><em class="time">
-<div class="time">37.73 s</div>
-</em>Users can log in and out (Negative Tests)</span>
-                <ul>
-                    <li class="level suite open">
-<span><em class="time">
-<div class="time">21.06 s</div>
-</em>Log in as PVA user with wrong password</span>
-                        <ul>
-                            <li class="level test">
-<span><em class="time">
-<div class="time">21.03 s</div>
-</em><em class="status">passed</em>Given I have logged in with a PVA Email and Password wrongpassword</span>
-                            </li>
-                            <li class="level test">
-<span><em class="time">
-<div class="time">28 ms</div>
-</em><em class="status">passed</em>Then I'll see Invalid username or password on the page</span>
-                            </li>
-                        </ul>
-                    </li>
-                    <li class="level suite open">
-<span><em class="time">
-<div class="time">16.67 s</div>
-</em>Log in as Punter user with wrong password</span>
-                        <ul>
-                            <li class="level test">
-<span><em class="time">
-<div class="time">16.63 s</div>
-</em><em class="status">passed</em>Given I have logged in with a Punter Email and Password wrongpassword</span>
-                            </li>
-                            <li class="level test">
-<span><em class="time">
-<div class="time">42 ms</div>
-</em><em class="status">passed</em>Then I'll see Invalid username or password on the page</span>
-                            </li>
-                        </ul>
+                    <li class="text">
+                        <span class="stdout">Process finished with exit code 1<br/></span>
                     </li>
                 </ul>
             </li>
@@ -752,7 +634,7 @@
     </div>
 </div>
 <div id="footer">
-    <p>Generated by PyCharm on 27/07/17 23:02</p>
+    <p>Generated by PyCharm on 28/07/17 15:09</p>
 </div>
 </body>
 </html>

@@ -5,12 +5,12 @@ Feature: PVA users can manage their events
 
   Scenario: Set up new event
     When I enter and submit a new free event(s) in 1 hours time
-    Then I'll see my event with an ID
+    Then I'll see my event(s) with an ID
 
 
   Scenario: Create 2 events and create a series
-    When
-    Then I'll get a message saying it happened
+    When I enter and submit 2 new free event(s) in 1 hours time
+    Then I'll see my event(s) with an ID
 
 
 #
