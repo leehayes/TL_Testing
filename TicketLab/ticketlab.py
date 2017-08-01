@@ -333,6 +333,14 @@ class UserPVA(BrowserInstance):
         button = self.driver.find_element_by_xpath(Xpath)
         button.click()
 
+    def toggle_event_off_and_on_sale(self, event_id):
+        self.driver.get(self.base_url + "/index.php/admin/toggle_live/" + str(event_id))
+
+    def event_is_off_sale(self, event_id):
+        self.driver.get(self.base_url + "/index.php/event/id/" + str(event_id))
+        http = self.driver.page_source
+        return ("Not on sale" in http)
+
     def check_event_details(self, event_id):
         '''
         :param event_id: id for the event

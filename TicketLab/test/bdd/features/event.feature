@@ -8,7 +8,7 @@ Feature: PVA users can manage their events
     Then I'll see my event with ID
 
   Scenario Outline: Edit an existing event
-    Given I have selected an event to edit multiple times
+    Given I have selected an event to edit
     When I edit the event field <Field>, to <Value>
     Examples:
       | Field  | Value       |
@@ -29,13 +29,14 @@ Feature: PVA users can manage their events
     Then I'll see my series with ID
 
   Scenario: I can take tickets for an event off sale
-    When I go to my dashboard
-    And I take the top listed event off sale
-    ##http://aphasian.com/ticketlab/index.php/admin/toggle_live/625
-    Then The dashboard provides an option to put the event back on sale
-    And the event page lists the event as Not on sale
-    #http://aphasian.com/ticketlab/index.php/event/id/421
+    Given I have selected an event to edit
+    When I take the event off sale
+    Then the event page shows the event as Not on sale
+    When I list the event as on sale
+    Then the event page shows the event as On sale
 
   Scenario: I can clone an event
+    Given I have selected an event to edit
+    When I select the option to clone.
   #http://aphasian.com/ticketlab/index.php/add/event/625/clone
 

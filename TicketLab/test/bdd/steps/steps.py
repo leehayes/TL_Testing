@@ -142,9 +142,37 @@ def step_check_field(context, field, value, ):
     assert_that((value in text), equal_to(True))
 
 
-@given("I have selected an event to edit multiple times")
+@given("I have selected an event to edit")
 def step_get_event_to_edit(context):
     if not context.events:
         list_of_live_events = context.browser.get_live_events("single_row")
         for event in list_of_live_events:
             context.events.append(event.get("event_id"))
+
+
+@given("I have a list of all my events")
+def step_get_event_to_edit(context):
+    if not context.events:
+        list_of_live_events = context.browser.get_live_events()
+        for event in list_of_live_events:
+            context.events.append(event.get("event_id"))
+
+
+@when("I take the event off sale")
+def step_take_event_off_sale(context):
+    context.browser.toggle_event_off_and_on_sale(context.events[0])
+
+
+@then("the event page shows the event as Not on sale")
+def step_check_event_not_on_sale(context):
+    assert_that(context.browser.event_is_off_sale(context.events[0]), equal_to(True))
+
+
+@when("I list the event as on sale")
+def step_place_event_on_sale(context):
+    context.browser.toggle_event_off_and_on_sale(context.events[0])
+
+
+@then("the event page shows the event as On sale")
+def step_check_event_not_on_sale(context):
+    assert_that(context.browser.event_is_off_sale(context.events[0]), equal_to(False))
