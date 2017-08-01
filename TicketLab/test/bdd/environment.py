@@ -3,7 +3,7 @@ from TL_Testing.TicketLab.Config import Config
 
 
 def before_all(context):
-    pass
+    context.events = []
 
 
 def after_all(context):

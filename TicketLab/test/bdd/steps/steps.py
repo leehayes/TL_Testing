@@ -46,33 +46,28 @@ def step_get_username(context, username):
 
     assert (username in context.browser.text) is True
 
-
 @given("I click the logout button")
 def step_logout(context, ):
     context.browser.log_out()
-
 
 @then("I am logged out")
 def step_confirm_logged_out(context, ):
     assert ("loginButton" in context.browser.text) is True
 
 
-@then("I'll get a message saying it happened")
-def step_get_a_msg(context, ):
-    pass
+@when("I enter and submit a new {cost} event in {time_unit} {time_measure} time")
+def step_create_single_event(context, cost, time_unit, time_measure):
+    step_create_event(context, 1, cost, time_unit, time_measure)
 
 
-@when("I enter and submit {no_of_events} new {cost} event(s) in {time_unit} {time_measure} time")
+@when("I enter and submit {no_of_events} new {cost} events in {time_unit} {time_measure} time")
 def step_create_event(context, no_of_events, cost, time_unit, time_measure):
     if cost == "free":
         cost = 0
     else:
         cost = float(cost)
 
-    if no_of_events == "a":
-        no_of_events = 1
-    else:
-        no_of_events = int(no_of_events)
+    no_of_events = int(no_of_events)
 
 
     if "day" in time_measure:
@@ -100,7 +95,7 @@ def step_create_event(context, no_of_events, cost, time_unit, time_measure):
 
     context.events = []
     for event in range(no_of_events):
-        event_id, event_name = context.browser.CreateNewEvent(
+        event_id, event_name = context.browser.create_new_event(
             EventDetails(name="BDD_Test_Event:{}".format(str(event + 1)),
                          day=day, month=month, year=year,
                          hour=hour, minute=minute, price=cost, numTickets="100",
@@ -111,8 +106,45 @@ def step_create_event(context, no_of_events, cost, time_unit, time_measure):
         context.events.append(event_id)
 
 
-@then("I'll see my event(s) with an ID")
+@then("I'll see my event with ID")
+def step_single_event_id(context, ):
+    step_event_id(context, )
+
+
+@then("I'll see my events with IDs")
 def step_event_id(context, ):
     no_of_events_created = len(context.events)
-    context.events = []
     assert_that(no_of_events_created, greater_than(0))
+
+
+@when("I select the ids for my series called {series_name}")
+def step_create_series(context, series_name):
+    """
+    :type context: behave.runner.Context
+    """
+    context.series = context.browser.create_series(seriesname=series_name, eventlist=context.events)
+    context.events = []
+
+
+@then("I'll see my series with ID")
+def step_confirm_series_id(context):
+    assert_that(len(context.series[0]), greater_than_or_equal_to(1))
+
+
+@when("I edit the event field {field}, to {value}")
+def step_edit_event(context, field, value, ):
+    context.browser.edit_event(context.events[0], {field: value}, )
+
+
+@then("the field {field}, will change on the events page to {value}")
+def step_check_field(context, field, value, ):
+    text = context.browser.check_event_details(context.events[0])
+    assert_that((value in text), equal_to(True))
+
+
+@given("I have selected an event to edit multiple times")
+def step_get_event_to_edit(context):
+    if not context.events:
+        list_of_live_events = context.browser.get_live_events("single_row")
+        for event in list_of_live_events:
+            context.events.append(event.get("event_id"))

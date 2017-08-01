@@ -7,3 +7,11 @@ Feature: As a user without an account, I need to scan tickets at the venue
 
   Scenario: As a PVA User I want to set up door staff with permission to scan my tickets
     # Enter steps here
+
+  #as door staff:
+
+  #scan ticket
+  Scenario:  A ticket cannot be scanned twice
+
+  #view allocation list for event
+  # view allocation list for PVAs event

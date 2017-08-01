@@ -175,7 +175,6 @@ class UserPunter(BrowserInstance):
         #return ticket id
         return img.get_attribute("src").split("/")[-1].split(".")[0]
 
-
 class UserPVA(BrowserInstance):
     '''
     A Promoter, Venue or Artist user instance to buy tickets and/or view tickets available
@@ -212,7 +211,7 @@ class UserPVA(BrowserInstance):
         button = self.driver.find_element_by_xpath(Xpath)
         button.click()
 
-    def CreateNewEvent(self, eventdetails):
+    def create_new_event(self, eventdetails):
         ''' Set Up a New Event
         :param eventdetails: A namedtuple containing all event details necessary for set up
         :return: Event ID and Name as a tuple
@@ -287,7 +286,101 @@ class UserPVA(BrowserInstance):
         #return event id and event name
         return self.driver.current_url.split("/")[-1], eventdetails.name
 
-    def CreateSeries(self, seriesname="New Series", eventlist = None):
+    def edit_event(self, event_id, eventdetails):
+        ''' Edit an Event
+        :
+        :param event_id: id of event to edit
+        :param eventdetails: A dict or keyword args containing all event details to amend
+        :return: None
+        '''
+        self.driver.get(self.base_url + "/index.php/add/event/" + str(event_id))
+
+        for k, v in eventdetails.items():
+            Field = k
+            Value = v
+
+        # UPDATE INPUTS
+
+        if Field == "name":
+            Xpath = "// input[@name = 'name']"
+            input = self.driver.find_element_by_xpath(Xpath)
+            input.send_keys(30 * Keys.BACKSPACE)
+            input.send_keys(Value)
+
+        elif Field == "day":
+            select = Select(self.driver.find_element_by_xpath("//select[@name='day']"))
+            select.select_by_value(Value)
+        elif Field == "month":
+            select = Select(self.driver.find_element_by_xpath("//select[@name='month']"))
+            select.select_by_value(Value)
+        elif Field == "year":
+            select = Select(self.driver.find_element_by_xpath("//select[@name='year']"))
+            select.select_by_value(Value)
+        elif Field == "hour":
+            elem = self.driver.find_element_by_name("year")
+            elem.send_keys(Keys.TAB, Value)  # tab over to hour, which is a not-visible element
+        elif Field == "minute":
+            elem = self.driver.find_element_by_name("year")
+            elem.send_keys(Keys.TAB * 2, Value)  # tab over to minute, which is a not-visible element
+        elif Field == "price":
+            Xpath = "// input[@name = 'price']"
+            input = self.driver.find_element_by_xpath(Xpath)
+            input.send_keys(10 * Keys.BACKSPACE)
+            input.send_keys(Value)
+
+        # Submit
+        Xpath = "// input[ @ type = 'submit']"
+        button = self.driver.find_element_by_xpath(Xpath)
+        button.click()
+
+    def check_event_details(self, event_id):
+        '''
+        :param event_id: id for the event
+        :return: http text for the event page
+        '''
+        self.driver.get(self.base_url + "/index.php/event/id/" + str(event_id))
+        http = self.driver.page_source
+        return http
+
+    def get_live_events(self, single_row=None):
+        '''
+        Gets all live events for the PVA
+        :return: a list of events, each event represented by a dict
+        '''
+
+        list_of_live_events = []
+
+        self.driver.get(self.base_url + "/index.php/dashboard")
+        Xpath = "// div[@class = 'TableWrapper']"
+        tables = self.driver.find_elements_by_xpath(Xpath)
+        Xpath = "// tr[ *]"
+        table = tables[0].find_elements_by_xpath(Xpath)
+
+        while len(table[0].text) == 0:  # make sure all cells are populated
+            # print("Table not yet populated, sleeping......")
+            time.sleep(2)
+
+        table = table[1:-1]  # trim headers and footer
+
+        table_length = (len(table))
+        if single_row == "single_row":
+            table_length = 1
+
+        for row in range(table_length):  # bug when looping through table - Use len counter instead
+            try:
+                cells = table[row].find_elements_by_tag_name("td")
+                links = table[row].find_elements_by_tag_name("a")
+                event_id = links[0].get_attribute('href').split("/")[-1]
+                list_of_live_events.append({"name": cells[0].text,
+                                            "event_id": event_id,
+                                            "date_time": cells[1].text,
+                                            "venue": cells[2].text, })
+            except:
+                pass
+
+        return list_of_live_events
+
+    def create_series(self, seriesname="New Series", eventlist=None):
         '''
         Create a Series out of a list of created events
         :param seriesname: Str name of the series
