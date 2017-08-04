@@ -38,5 +38,5 @@ Feature: PVA users can manage their events
   Scenario: I can clone an event
     Given I have selected an event to edit
     When I select the option to clone.
-  #http://aphasian.com/ticketlab/index.php/add/event/625/clone
+    Then I get a new event id
 

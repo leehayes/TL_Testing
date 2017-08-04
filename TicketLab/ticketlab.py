@@ -76,9 +76,14 @@ class BrowserInstance:
     def log_out(self, ):
         self.driver.get(self.base_url+"/login/logout")
 
-    @property
     def text(self):
         return self.driver.page_source
+
+    def get_url(self):
+        return self.driver.current_url
+
+    def go_to_url(self, url):
+        self.driver.get(self.base_url + url)
 
 class UserPunter(BrowserInstance):
     '''
@@ -340,6 +345,14 @@ class UserPVA(BrowserInstance):
         self.driver.get(self.base_url + "/index.php/event/id/" + str(event_id))
         http = self.driver.page_source
         return ("Not on sale" in http)
+
+    def clone_event(self, event_id):
+        self.driver.get(self.base_url + "/index.php/add/event/" + str(event_id) + "/clone")
+        # Submit
+        Xpath = "// input[ @ type = 'submit']"
+        button = self.driver.find_element_by_xpath(Xpath)
+        button.click()
+
 
     def check_event_details(self, event_id):
         '''

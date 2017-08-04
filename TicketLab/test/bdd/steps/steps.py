@@ -35,16 +35,16 @@ def step_open_browser_and_login(context, user_email, user_password):
     context.browser.log_in(user_email, user_password)
 
 
-@then("I'll see {username} on the page")
-def step_get_username(context, username):
-    if username == "PVA Username":
-        username = usernames.get(username)
-    elif username == "Punter Username":
-        username = usernames.get(username)
+@then("I'll see {search_for_text} on the page")
+def step_get_username(context, search_for_text):
+    if search_for_text == "PVA Username":
+        search_for_text = usernames.get(search_for_text)
+    elif search_for_text == "Punter Username":
+        search_for_text = usernames.get(username)
     else:
-        username = username
+        search_for_text = search_for_text
 
-    assert (username in context.browser.text) is True
+    assert (search_for_text in context.browser.text) is True
 
 @given("I click the logout button")
 def step_logout(context, ):
@@ -176,3 +176,18 @@ def step_place_event_on_sale(context):
 @then("the event page shows the event as On sale")
 def step_check_event_not_on_sale(context):
     assert_that(context.browser.event_is_off_sale(context.events[0]), equal_to(False))
+
+
+@when("I select the option to clone.")
+def step_clone(context, ):
+    context.browser.clone_event(context.events[0])
+
+
+@then("I get a new event id")
+def step_check_event_id_diff_to_context_event_id(context):
+    assert_that(context.browser.get_url().split("/")[-1], not (equal_to(context.events[0])))
+
+
+@when("I go to the edit event url")
+def step_go_to_edit_event_url(context):
+    context.browser.go_to_url("/index.php/add/event/" + str(context.events[0]))
