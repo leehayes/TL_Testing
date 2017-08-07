@@ -8,8 +8,9 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 
 from TL_Testing.TicketLab.Config import Config
-
 URL = Config.URL
+MY_DIR = Config.MY_DIR
+OS = Config.OS
 
 class BrowserInstance:
     '''
@@ -35,7 +36,11 @@ class BrowserInstance:
         :return: self
         '''
         self.start = time.time()
-        self.chromedriver = r"/Users/leeha/mycode/driver/chromedriver"
+        # Choose correct chromedriver
+        if OS == "Win":
+            self.chromedriver = r"{}TL_Testing/TicketLab/driver/chromedriver".format(MY_DIR)
+        else:
+            self.chromedriver = r"{}TL_Testing/TicketLab/driver/chromedriverMac".format(MY_DIR)
         self.driver = webdriver.Chrome(self.chromedriver)
         # driver.set_window_position(-10000, 0)
         self.driver.set_page_load_timeout(30)
@@ -76,21 +81,8 @@ class BrowserInstance:
     def log_out(self, ):
         self.driver.get(self.base_url+"/login/logout")
 
-    def text(self):
-        return self.driver.page_source
-
-    def get_url(self):
-        return self.driver.current_url
-
-    def go_to_url(self, url):
-        self.driver.get(self.base_url + url)
-
-class UserPunter(BrowserInstance):
-    '''
-    A user instance to buy tickets
-    '''
-    def __init__(self):
-        super(UserPunter, self).__init__()
+    def enter_user_random_details(self, email):
+        pass
 
     def _click_button(self, text, times=1):
         ''' Clicks a button that matches the text
@@ -103,6 +95,89 @@ class UserPunter(BrowserInstance):
         for click in range(times):
             button.click()
         return None
+
+    def buy_tickets(self, event_id, no_of_tickets=1):
+        ''' Buy tickets
+        :param event_id: int of event id - converted to str
+        :param no_of_tickets: (int) Number of tickets to buy - defaults to 1
+        :return: int(ticket id)
+        '''
+
+        event_id = str(event_id)
+        no_of_tickets = no_of_tickets
+
+        # Go to the buy tickets page
+        self.driver.get(self.base_url + "/buy/id/{}".format(event_id))
+
+        # increase tickets
+        self._click_button("+", times=no_of_tickets - 1)
+
+        buttons = self.driver.find_elements_by_css_selector('.button')
+        buttons[0].click()
+
+        # Page refreshed to recalc cost of tickets. Get buttons again and submit form
+        buttons = self.driver.find_elements_by_css_selector('.button')
+        buttons[1].click()
+
+        # Submit
+        Xpath = "// input[ @ type = 'submit']"
+        button = self.driver.find_element_by_xpath(Xpath)
+        button.click()
+
+        # Get Ticket ID
+        Ticket_id = None
+        Xpath = "// img[contains(@src, '{}/images/qrs/')]".format(self.base_url)
+        img = self.driver.find_element_by_xpath(Xpath)
+
+    def enter_user_random_details(self, email):
+        First_name
+        surname
+
+        email
+        telephone
+
+        # Populate custom field
+        Xpath = "// input[ @ name = 'customField']"
+        elem = self.driver.find_element_by_xpath(Xpath)
+        elem.send_keys("Testing customField")
+
+        # Details page. Untick email options
+        checkbox_dict = {"ticketlab_optin": False,
+                         "promoter_optin": False, }
+        for k, v in checkbox_dict.items():
+            Xpath = "// input[ @ name = '" + k + "']"
+            x = self.driver.find_element_by_xpath(Xpath)
+            x.click()  # click on the checkbox to deselect
+
+        # Submit
+        Xpath = "// input[ @ type = 'submit']"
+        button = self.driver.find_element_by_xpath(Xpath)
+        button.click()
+
+        # Get Ticket ID
+        Ticket_id = None
+        Xpath = "// img[contains(@src, '{}/images/qrs/')]".format(self.base_url)
+        img = self.driver.find_element_by_xpath(Xpath)
+
+    @property
+    def text(self):
+        return self.driver.page_source
+
+    @property
+    def url(self):
+        return self.driver.current_url
+
+    def go_to_url(self, url):
+        self.driver.get(self.base_url + url)
+
+
+class UserPunter(BrowserInstance):
+    '''
+    A user instance to buy tickets
+    '''
+
+    def __init__(self):
+        super(UserPunter, self).__init__()
 
     def _bulk_buy_tickets(self, event_list, total_tickets, groups_of):
         ''' Loops through the events and buys tickets in groups. Built primarily for
@@ -132,7 +207,6 @@ class UserPunter(BrowserInstance):
 
     def buy_tickets(self, event_id, no_of_tickets = 1):
         ''' Buy tickets
-        Precondition: User session must be logged in as a non-PVA
         :param event_id: int of event id - converted to str
         :param no_of_tickets: (int) Number of tickets to buy - defaults to 1
         :return: int(ticket id)
@@ -488,6 +562,54 @@ class UserPVA(BrowserInstance):
 
         return status, msg
 
+    def buy_tickets(self, event_id, no_of_tickets=1):
+        ''' Buy tickets
+        :param event_id: int of event id - converted to str
+        :param no_of_tickets: (int) Number of tickets to buy - defaults to 1
+        :return: int(ticket id)
+        '''
+
+        event_id = str(event_id)
+        no_of_tickets = no_of_tickets
+
+        # Go to the buy tickets page
+        self.driver.get(self.base_url + "/buy/id/{}".format(event_id))
+
+        # increase tickets
+        self._click_button("+", times=no_of_tickets - 1)
+
+        buttons = self.driver.find_elements_by_css_selector('.button')
+        buttons[0].click()
+
+        # Page refreshed to recalc cost of tickets. Get buttons again and submit form
+        buttons = self.driver.find_elements_by_css_selector('.button')
+        buttons[1].click()
+
+        # Populate custom field
+        Xpath = "// input[ @ name = 'customField']"
+        elem = self.driver.find_element_by_xpath(Xpath)
+        elem.send_keys("Testing customField")
+
+        # Details page. Untick email options
+        checkbox_dict = {"ticketlab_optin": False,
+                         "promoter_optin": False, }
+        for k, v in checkbox_dict.items():
+            Xpath = "// input[ @ name = '" + k + "']"
+            x = self.driver.find_element_by_xpath(Xpath)
+            x.click()  # click on the checkbox to deselect
+
+        # Submit
+        Xpath = "// input[ @ type = 'submit']"
+        button = self.driver.find_element_by_xpath(Xpath)
+        button.click()
+
+        # Get Ticket ID
+        Ticket_id = None
+        Xpath = "// img[contains(@src, '{}/images/qrs/')]".format(self.base_url)
+        img = self.driver.find_element_by_xpath(Xpath)
+
+        # return ticket id
+        return img.get_attribute("src").split("/")[-1].split(".")[0]
 
 
 

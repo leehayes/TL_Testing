@@ -40,3 +40,6 @@ Feature: PVA users can manage their events
     When I select the option to clone.
     Then I get a new event id
 
+  Scenario: I can create an opt-out event
+
+  Scenario: As a Punter user I can set up my own events

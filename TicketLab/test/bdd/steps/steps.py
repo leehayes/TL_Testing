@@ -1,5 +1,7 @@
 from collections import namedtuple
 from datetime import datetime, timedelta
+import random
+import string
 
 from behave import *
 from dateutil.relativedelta import relativedelta
@@ -36,15 +38,14 @@ def step_open_browser_and_login(context, user_email, user_password):
 
 
 @then("I'll see {search_for_text} on the page")
-def step_get_username(context, search_for_text):
+def step_search_page_for_text(context, search_for_text):
     if search_for_text == "PVA Username":
         search_for_text = usernames.get(search_for_text)
     elif search_for_text == "Punter Username":
-        search_for_text = usernames.get(username)
+        search_for_text = usernames.get(search_for_text)
     else:
         search_for_text = search_for_text
-
-    assert (search_for_text in context.browser.text) is True
+    assert_that((search_for_text in context.browser.text), equal_to(True))
 
 @given("I click the logout button")
 def step_logout(context, ):
@@ -52,7 +53,7 @@ def step_logout(context, ):
 
 @then("I am logged out")
 def step_confirm_logged_out(context, ):
-    assert ("loginButton" in context.browser.text) is True
+    assert_that(("loginButton" in context.browser.text), equal_to(True))
 
 
 @when("I enter and submit a new {cost} event in {time_unit} {time_measure} time")
@@ -150,6 +151,11 @@ def step_get_event_to_edit(context):
             context.events.append(event.get("event_id"))
 
 
+@given("I have selected an event to buy")
+def step_choose_an_event_to_buy(context):
+    step_get_event_to_edit(context)
+
+
 @given("I have a list of all my events")
 def step_get_event_to_edit(context):
     if not context.events:
@@ -185,9 +191,46 @@ def step_clone(context, ):
 
 @then("I get a new event id")
 def step_check_event_id_diff_to_context_event_id(context):
-    assert_that(context.browser.get_url().split("/")[-1], not (equal_to(context.events[0])))
+    assert_that(context.browser.url.split("/")[-1], not (equal_to(context.events[0])))
 
 
 @when("I go to the edit event url")
 def step_go_to_edit_event_url(context):
     context.browser.go_to_url("/index.php/add/event/" + str(context.events[0]))
+
+
+@then("I select the event and choose to buy {no_of_tickets} tickets")
+def step_buy_tickets(context, no_of_tickets):
+    ticket_id = context.browser.buy_tickets(context.events[0], int(no_of_tickets))
+    assert_that(len(ticket_id), greater_than_or_equal_to(7))
+
+
+@given("I am not a registered user")
+def step_change_context_browser_to_unregistered(context):
+    """
+    This replaces the previous PVA or Punter user session and replaces with a vanilla browser session
+    """
+    context.browser = tl.BrowserInstance()
+    context.browser.__enter__()
+
+
+@then("I enter my details, using {email}")
+def step_impl(context, email):
+    if email == "a random email":
+        email = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
+    else:
+        email = email
+
+    context.browser.enter_user_random_details(email)
+
+
+@then("I go to the event and select {no_of_tickets} tickets")
+def step_select_tickets_and_submit(context, no_of_tickets):
+    ticket_id = context.browser.buy_tickets(context.events[0], int(no_of_tickets))
+    assert_that(len(ticket_id), greater_than_or_equal_to(7))
+
+
+@then("I choose to buy {no_of_tickets} tickets")
+def step_impl(context, no_of_tickets):
+    # http: // aphasian.com / ticketlab / index.php / buy / details
+    raise ValueError
