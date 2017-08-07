@@ -81,9 +81,6 @@ class BrowserInstance:
     def log_out(self, ):
         self.driver.get(self.base_url+"/login/logout")
 
-    def enter_user_random_details(self, email):
-        pass
-
     def _click_button(self, text, times=1):
         ''' Clicks a button that matches the text
         :param text: Str of button text to find
@@ -97,7 +94,7 @@ class BrowserInstance:
         return None
 
     def buy_tickets(self, event_id, no_of_tickets=1):
-        ''' Buy tickets
+        ''' Buy tickets without being logged in (will be expected to provide email and password
         :param event_id: int of event id - converted to str
         :param no_of_tickets: (int) Number of tickets to buy - defaults to 1
         :return: int(ticket id)
@@ -124,22 +121,40 @@ class BrowserInstance:
         button = self.driver.find_element_by_xpath(Xpath)
         button.click()
 
-        # Get Ticket ID
-        Ticket_id = None
-        Xpath = "// img[contains(@src, '{}/images/qrs/')]".format(self.base_url)
-        img = self.driver.find_element_by_xpath(Xpath)
+    def enter_user_random_details(self, email, first_name, surname):
 
-    def enter_user_random_details(self, email):
-        First_name
-        surname
+        # Populate forename
+        Xpath = "// input[ @ name = 'forename']"
+        elem = self.driver.find_element_by_xpath(Xpath)
+        elem.send_keys(first_name)
 
-        email
-        telephone
+        # Populate surname
+        Xpath = "// input[ @ name = 'surname']"
+        elem = self.driver.find_element_by_xpath(Xpath)
+        elem.send_keys(surname)
+
+        # Populate telephone no
+        Xpath = "// input[ @ name = 'telephone']"
+        elem = self.driver.find_element_by_xpath(Xpath)
+        elem.send_keys("01689824686")
+
+        # Populate email
+        Xpath = "// input[ @ name = 'email']"
+        elem = self.driver.find_element_by_xpath(Xpath)
+        elem.send_keys(email)
 
         # Populate custom field
         Xpath = "// input[ @ name = 'customField']"
         elem = self.driver.find_element_by_xpath(Xpath)
         elem.send_keys("Testing customField")
+
+        # Populate password
+        Xpath = "// input[ @ name = 'password']"
+        elem = self.driver.find_element_by_xpath(Xpath)
+        elem.send_keys("password")
+        Xpath = "// input[ @ name = 'confirm']"
+        elem = self.driver.find_element_by_xpath(Xpath)
+        elem.send_keys("password")
 
         # Details page. Untick email options
         checkbox_dict = {"ticketlab_optin": False,
@@ -158,6 +173,7 @@ class BrowserInstance:
         Ticket_id = None
         Xpath = "// img[contains(@src, '{}/images/qrs/')]".format(self.base_url)
         img = self.driver.find_element_by_xpath(Xpath)
+        time.sleep(300)
 
     @property
     def text(self):
@@ -253,6 +269,81 @@ class UserPunter(BrowserInstance):
 
         #return ticket id
         return img.get_attribute("src").split("/")[-1].split(".")[0]
+
+    def create_new_event(self, eventdetails):
+        ''' Set Up a New Event
+        :param eventdetails: A namedtuple containing all event details necessary for set up
+        :return: Event ID and Name as a tuple
+        '''
+
+        eventdetails = eventdetails
+
+        self.driver.get(self.base_url + "/add/event")
+
+        # UPDATE INPUTS
+        # Name
+        Xpath = "// input[@name = 'name']"
+        input = self.driver.find_element_by_xpath(Xpath)
+        input.send_keys(eventdetails.name)
+
+        # Day Month Year
+        select = Select(self.driver.find_element_by_xpath("//select[@name='day']"))
+        select.select_by_value(eventdetails.day)
+        select = Select(self.driver.find_element_by_xpath("//select[@name='month']"))
+        select.select_by_value(eventdetails.month)
+        select = Select(self.driver.find_element_by_xpath("//select[@name='year']"))
+        select.select_by_value(eventdetails.year)
+
+        # Time (hack)
+        # tab after year to get hour, the tab again to get minute
+        elem = self.driver.find_element_by_name("year")
+        elem.send_keys(Keys.TAB, eventdetails.hour)  # tab over to hour, which is a not-visible element
+        elem.send_keys(Keys.TAB * 2, eventdetails.minute)  # tab over to minute, which is a not-visible element
+
+        # price
+        Xpath = "// input[@name = 'price']"
+        input = self.driver.find_element_by_xpath(Xpath)
+        input.send_keys(eventdetails.price)
+
+        # numTickets
+        Xpath = "// input[@name = 'numTickets']"
+        input = self.driver.find_element_by_xpath(Xpath)
+        input.send_keys(eventdetails.numTickets)
+
+        # #starthour
+        # Xpath = "// input[@name = 'starthour']"
+        # input = self.driver.find_element_by_xpath(Xpath)
+        # input.send_keys(eventdetails.starthour)
+        #
+        # #startminute
+        # Xpath = "// input[@name = 'startminute']"
+        # input = self.driver.find_element_by_xpath(Xpath)
+        # input.send_keys(eventdetails.startminute)
+
+        # customField
+        Xpath = "// input[@name = 'customField']"
+        input = self.driver.find_element_by_xpath(Xpath)
+        input.send_keys(eventdetails.customField)
+
+        # max_sell
+        Xpath = "// input[@name = 'max_sell']"
+        input = self.driver.find_element_by_xpath(Xpath)
+        input.send_keys(eventdetails.max_sell)
+
+        # Populate Description and T&Cs
+        elem = self.driver.find_element_by_name("specifySaleStart")
+        elem.send_keys(Keys.TAB, "It's gonna be fun")  # tab over to description, which is a not-visible element
+        elem = self.driver.find_element_by_name("specifySaleStart")
+        elem.send_keys(Keys.TAB * 2, "NO REFUNDS \n You break it, you bought it")  # tab over to terms
+
+        # Submit
+        Xpath = "// input[ @ type = 'submit']"
+        button = self.driver.find_element_by_xpath(Xpath)
+        button.click()
+
+        # return event id and event name
+        return self.driver.current_url.split("/")[-1], eventdetails.name
+
 
 class UserPVA(BrowserInstance):
     '''
@@ -406,6 +497,15 @@ class UserPVA(BrowserInstance):
             input = self.driver.find_element_by_xpath(Xpath)
             input.send_keys(10 * Keys.BACKSPACE)
             input.send_keys(Value)
+        elif Field == "opt_in_out":
+            Xpath = "// input[ @ name = 'private']"
+            x = self.driver.find_element_by_xpath(Xpath)
+            x.click()  # click on the checkbox to deselect
+        elif Field == "password_protect":
+            Xpath = "// input[ @ name = 'passwordProtect']"
+            x = self.driver.find_element_by_xpath(Xpath)
+            x.click()  # click on the checkbox to select
+
 
         # Submit
         Xpath = "// input[ @ type = 'submit']"

@@ -41,5 +41,26 @@ Feature: PVA users can manage their events
     Then I get a new event id
 
   Scenario: I can create an opt-out event
+    Given I have selected an event to edit
+    When I edit the event field name, to Opt-Out Event Test
+    Given I have selected an event to edit
+    When I edit the event field opt_in_out, to click_box
+    When I go to the public event page
+    Then There will be no event called Opt-Out Event Test publicly visible
+    And The event is still visible via the buy ticket url
+
+  Scenario: Password protected events are not visible on the main screen
+    Given I have selected an event to edit
+    When I edit the event field name, to Password Protected Event
+    Given I have selected an event to edit
+    When I edit the event field password_protect, to click_box
+    When I go to the public event page
+    Then There will be no event called Password Protected Event publicly visible
+    And The event is still visible via the buy ticket url
 
   Scenario: As a Punter user I can set up my own events
+    Given I click the logout button
+    Then I am logged out
+    Given I have logged in with Punter Email and Password Punter Password
+    When I enter and submit a new free event in 1 hour time
+    Then I'll see my event with ID

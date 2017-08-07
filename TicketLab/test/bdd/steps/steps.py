@@ -178,32 +178,26 @@ def step_check_event_not_on_sale(context):
 def step_place_event_on_sale(context):
     context.browser.toggle_event_off_and_on_sale(context.events[0])
 
-
 @then("the event page shows the event as On sale")
 def step_check_event_not_on_sale(context):
     assert_that(context.browser.event_is_off_sale(context.events[0]), equal_to(False))
-
 
 @when("I select the option to clone.")
 def step_clone(context, ):
     context.browser.clone_event(context.events[0])
 
-
 @then("I get a new event id")
 def step_check_event_id_diff_to_context_event_id(context):
     assert_that(context.browser.url.split("/")[-1], not (equal_to(context.events[0])))
-
 
 @when("I go to the edit event url")
 def step_go_to_edit_event_url(context):
     context.browser.go_to_url("/index.php/add/event/" + str(context.events[0]))
 
-
 @then("I select the event and choose to buy {no_of_tickets} tickets")
 def step_buy_tickets(context, no_of_tickets):
     ticket_id = context.browser.buy_tickets(context.events[0], int(no_of_tickets))
     assert_that(len(ticket_id), greater_than_or_equal_to(7))
-
 
 @given("I am not a registered user")
 def step_change_context_browser_to_unregistered(context):
@@ -212,25 +206,39 @@ def step_change_context_browser_to_unregistered(context):
     """
     context.browser = tl.BrowserInstance()
     context.browser.__enter__()
-
-
-@then("I enter my details, using {email}")
-def step_impl(context, email):
-    if email == "a random email":
-        email = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
-    else:
-        email = email
-
-    context.browser.enter_user_random_details(email)
-
+    context.browser.username = "Randomy"
+    context.browser.user_surname = "McRandomFace"
 
 @then("I go to the event and select {no_of_tickets} tickets")
 def step_select_tickets_and_submit(context, no_of_tickets):
     ticket_id = context.browser.buy_tickets(context.events[0], int(no_of_tickets))
-    assert_that(len(ticket_id), greater_than_or_equal_to(7))
 
 
-@then("I choose to buy {no_of_tickets} tickets")
-def step_impl(context, no_of_tickets):
-    # http: // aphasian.com / ticketlab / index.php / buy / details
-    raise ValueError
+@then("There will be no event called {event_name} publicly visible")
+def step_opt_out_not_visible(context, event_name):
+    text = context.browser.text
+    context.browser.event_name = event_name
+    assert_that((event_name in text), equal_to(False))
+
+
+@when("I go to the public event page")
+def step_go_to_public_events(context):
+    context.browser.go_to_url("/index.php/tickets")
+
+
+@step("The event is still visible via the buy ticket url")
+def step_go_to_ticket_url(context):
+    context.browser.go_to_url("/index.php/event/id/" + context.events[0])
+    text = context.browser.text
+    assert_that((context.browser.event_name in text), equal_to(True))
+    context.browser.event_name = None
+
+
+@then("I enter the details with {email} email address")
+def step_enter_random_details(context, email):
+    if email == "random":
+        email = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
+        email = 'delete-email-' + email + '@gmail.com'
+    else:
+        email = emails.get(email, email)
+    context.browser.enter_user_random_details(email, context.browser.username, context.browser.user_surname)
