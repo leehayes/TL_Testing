@@ -1,11 +1,8 @@
 import time
-
-from pprint import pprint
 from collections import namedtuple
 
 from Config import Config
-from ticketlab import UserPVA, UserPunter, StressTest
-
+from ticketlab import UserPVA, StressTest
 
 URL = Config.URL
 
@@ -31,7 +28,7 @@ PUNTER1PASSWORD = Config.PUNTER1PASSWORD
 #     #Create Multiple Events
 #     events = []
 #     for event in range(10):
-#         events.append(user.CreateNewEvent(EventDetails(name="StressTestEvent:{}".format(event+1), day="25", month="12", year="2018",
+#         events.append(user.create_new_event(EventDetails(name="StressTestEvent:{}".format(event+1), day="25", month="12", year="2018",
 #                      hour="20", minute="30", price="0", numTickets="500",
 #                      # starthour='20', startminute='30',
 #                      customField='Tell me the name of your kid!',
@@ -44,7 +41,7 @@ PUNTER1PASSWORD = Config.PUNTER1PASSWORD
 #     listofevents = [x for x,y in events]
 #
 #     #Create a New Series
-#     x = user.CreateSeries("Test Series", listofevents)
+#     x = user.create_series("Test Series", listofevents)
 #
 #     print("Series id:" + x)
 #

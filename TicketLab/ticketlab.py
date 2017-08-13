@@ -1,18 +1,16 @@
-
+import asyncio
 import time
 
-from http.cookies import SimpleCookie
-
 import aiohttp
-import asyncio
 import async_timeout
-
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
-from Config import Config
 
+from TL_Testing.TicketLab.Config import Config
 URL = Config.URL
+MY_DIR = Config.MY_DIR
+OS = Config.OS
 
 class BrowserInstance:
     '''
@@ -38,7 +36,11 @@ class BrowserInstance:
         :return: self
         '''
         self.start = time.time()
-        self.chromedriver = r"/Users/leeha/mycode/driver/chromedriver"
+        # Choose correct chromedriver
+        if OS == "Win":
+            self.chromedriver = r"{}TL_Testing/TicketLab/driver/chromedriver".format(MY_DIR)
+        else:
+            self.chromedriver = r"{}TL_Testing/TicketLab/driver/chromedriverMac".format(MY_DIR)
         self.driver = webdriver.Chrome(self.chromedriver)
         # driver.set_window_position(-10000, 0)
         self.driver.set_page_load_timeout(30)
@@ -79,14 +81,6 @@ class BrowserInstance:
     def log_out(self, ):
         self.driver.get(self.base_url+"/login/logout")
 
-
-class UserPunter(BrowserInstance):
-    '''
-    A user instance to buy tickets
-    '''
-    def __init__(self):
-        super(UserPunter, self).__init__()
-
     def _click_button(self, text, times=1):
         ''' Clicks a button that matches the text
         :param text: Str of button text to find
@@ -98,6 +92,108 @@ class UserPunter(BrowserInstance):
         for click in range(times):
             button.click()
         return None
+
+    def buy_tickets(self, event_id, no_of_tickets=1):
+        ''' Buy tickets without being logged in (will be expected to provide email and password
+        :param event_id: int of event id - converted to str
+        :param no_of_tickets: (int) Number of tickets to buy - defaults to 1
+        :return: int(ticket id)
+        '''
+
+        event_id = str(event_id)
+        no_of_tickets = no_of_tickets
+
+        # Go to the buy tickets page
+        self.driver.get(self.base_url + "/buy/id/{}".format(event_id))
+
+        # increase tickets
+        self._click_button("+", times=no_of_tickets - 1)
+
+        buttons = self.driver.find_elements_by_css_selector('.button')
+        buttons[0].click()
+
+        # Page refreshed to recalc cost of tickets. Get buttons again and submit form
+        buttons = self.driver.find_elements_by_css_selector('.button')
+        buttons[1].click()
+
+        # Submit
+        Xpath = "// input[ @ type = 'submit']"
+        button = self.driver.find_element_by_xpath(Xpath)
+        button.click()
+
+    def enter_user_random_details(self, email, first_name, surname):
+
+        # Populate forename
+        Xpath = "// input[ @ name = 'forename']"
+        elem = self.driver.find_element_by_xpath(Xpath)
+        elem.send_keys(first_name)
+
+        # Populate surname
+        Xpath = "// input[ @ name = 'surname']"
+        elem = self.driver.find_element_by_xpath(Xpath)
+        elem.send_keys(surname)
+
+        # Populate telephone no
+        Xpath = "// input[ @ name = 'telephone']"
+        elem = self.driver.find_element_by_xpath(Xpath)
+        elem.send_keys("01689824686")
+
+        # Populate email
+        Xpath = "// input[ @ name = 'email']"
+        elem = self.driver.find_element_by_xpath(Xpath)
+        elem.send_keys(email)
+
+        # Populate custom field
+        Xpath = "// input[ @ name = 'customField']"
+        elem = self.driver.find_element_by_xpath(Xpath)
+        elem.send_keys("Testing customField")
+
+        # Populate password
+        Xpath = "// input[ @ name = 'password']"
+        elem = self.driver.find_element_by_xpath(Xpath)
+        elem.send_keys("password")
+        Xpath = "// input[ @ name = 'confirm']"
+        elem = self.driver.find_element_by_xpath(Xpath)
+        elem.send_keys("password")
+
+        # Details page. Untick email options
+        checkbox_dict = {"ticketlab_optin": False,
+                         "promoter_optin": False, }
+        for k, v in checkbox_dict.items():
+            Xpath = "// input[ @ name = '" + k + "']"
+            x = self.driver.find_element_by_xpath(Xpath)
+            x.click()  # click on the checkbox to deselect
+
+        # Submit
+        Xpath = "// input[ @ type = 'submit']"
+        button = self.driver.find_element_by_xpath(Xpath)
+        button.click()
+
+        # Get Ticket ID
+        Ticket_id = None
+        Xpath = "// img[contains(@src, '{}/images/qrs/')]".format(self.base_url)
+        img = self.driver.find_element_by_xpath(Xpath)
+        time.sleep(300)
+
+    @property
+    def text(self):
+        return self.driver.page_source
+
+    @property
+    def url(self):
+        return self.driver.current_url
+
+    def go_to_url(self, url):
+        self.driver.get(self.base_url + url)
+
+
+class UserPunter(BrowserInstance):
+    '''
+    A user instance to buy tickets
+    '''
+
+    def __init__(self):
+        super(UserPunter, self).__init__()
 
     def _bulk_buy_tickets(self, event_list, total_tickets, groups_of):
         ''' Loops through the events and buys tickets in groups. Built primarily for
@@ -127,8 +223,7 @@ class UserPunter(BrowserInstance):
 
     def buy_tickets(self, event_id, no_of_tickets = 1):
         ''' Buy tickets
-        Precondition: User session must be logged in as a non-PVA
-        :param eventid: Event id of ticket purchase
+        :param event_id: int of event id - converted to str
         :param no_of_tickets: (int) Number of tickets to buy - defaults to 1
         :return: int(ticket id)
         '''
@@ -175,6 +270,80 @@ class UserPunter(BrowserInstance):
         #return ticket id
         return img.get_attribute("src").split("/")[-1].split(".")[0]
 
+    def create_new_event(self, eventdetails):
+        ''' Set Up a New Event
+        :param eventdetails: A namedtuple containing all event details necessary for set up
+        :return: Event ID and Name as a tuple
+        '''
+
+        eventdetails = eventdetails
+
+        self.driver.get(self.base_url + "/add/event")
+
+        # UPDATE INPUTS
+        # Name
+        Xpath = "// input[@name = 'name']"
+        input = self.driver.find_element_by_xpath(Xpath)
+        input.send_keys(eventdetails.name)
+
+        # Day Month Year
+        select = Select(self.driver.find_element_by_xpath("//select[@name='day']"))
+        select.select_by_value(eventdetails.day)
+        select = Select(self.driver.find_element_by_xpath("//select[@name='month']"))
+        select.select_by_value(eventdetails.month)
+        select = Select(self.driver.find_element_by_xpath("//select[@name='year']"))
+        select.select_by_value(eventdetails.year)
+
+        # Time (hack)
+        # tab after year to get hour, the tab again to get minute
+        elem = self.driver.find_element_by_name("year")
+        elem.send_keys(Keys.TAB, eventdetails.hour)  # tab over to hour, which is a not-visible element
+        elem.send_keys(Keys.TAB * 2, eventdetails.minute)  # tab over to minute, which is a not-visible element
+
+        # price
+        Xpath = "// input[@name = 'price']"
+        input = self.driver.find_element_by_xpath(Xpath)
+        input.send_keys(eventdetails.price)
+
+        # numTickets
+        Xpath = "// input[@name = 'numTickets']"
+        input = self.driver.find_element_by_xpath(Xpath)
+        input.send_keys(eventdetails.numTickets)
+
+        # #starthour
+        # Xpath = "// input[@name = 'starthour']"
+        # input = self.driver.find_element_by_xpath(Xpath)
+        # input.send_keys(eventdetails.starthour)
+        #
+        # #startminute
+        # Xpath = "// input[@name = 'startminute']"
+        # input = self.driver.find_element_by_xpath(Xpath)
+        # input.send_keys(eventdetails.startminute)
+
+        # customField
+        Xpath = "// input[@name = 'customField']"
+        input = self.driver.find_element_by_xpath(Xpath)
+        input.send_keys(eventdetails.customField)
+
+        # max_sell
+        Xpath = "// input[@name = 'max_sell']"
+        input = self.driver.find_element_by_xpath(Xpath)
+        input.send_keys(eventdetails.max_sell)
+
+        # Populate Description and T&Cs
+        elem = self.driver.find_element_by_name("specifySaleStart")
+        elem.send_keys(Keys.TAB, "It's gonna be fun")  # tab over to description, which is a not-visible element
+        elem = self.driver.find_element_by_name("specifySaleStart")
+        elem.send_keys(Keys.TAB * 2, "NO REFUNDS \n You break it, you bought it")  # tab over to terms
+
+        # Submit
+        Xpath = "// input[ @ type = 'submit']"
+        button = self.driver.find_element_by_xpath(Xpath)
+        button.click()
+
+        # return event id and event name
+        return self.driver.current_url.split("/")[-1], eventdetails.name
+
 
 class UserPVA(BrowserInstance):
     '''
@@ -212,7 +381,7 @@ class UserPVA(BrowserInstance):
         button = self.driver.find_element_by_xpath(Xpath)
         button.click()
 
-    def CreateNewEvent(self, eventdetails):
+    def create_new_event(self, eventdetails):
         ''' Set Up a New Event
         :param eventdetails: A namedtuple containing all event details necessary for set up
         :return: Event ID and Name as a tuple
@@ -287,7 +456,126 @@ class UserPVA(BrowserInstance):
         #return event id and event name
         return self.driver.current_url.split("/")[-1], eventdetails.name
 
-    def CreateSeries(self, seriesname="New Series", eventlist = None):
+    def edit_event(self, event_id, eventdetails):
+        ''' Edit an Event
+        :
+        :param event_id: id of event to edit
+        :param eventdetails: A dict or keyword args containing all event details to amend
+        :return: None
+        '''
+        self.driver.get(self.base_url + "/index.php/add/event/" + str(event_id))
+
+        for k, v in eventdetails.items():
+            Field = k
+            Value = v
+
+        # UPDATE INPUTS
+
+        if Field == "name":
+            Xpath = "// input[@name = 'name']"
+            input = self.driver.find_element_by_xpath(Xpath)
+            input.send_keys(30 * Keys.BACKSPACE)
+            input.send_keys(Value)
+
+        elif Field == "day":
+            select = Select(self.driver.find_element_by_xpath("//select[@name='day']"))
+            select.select_by_value(Value)
+        elif Field == "month":
+            select = Select(self.driver.find_element_by_xpath("//select[@name='month']"))
+            select.select_by_value(Value)
+        elif Field == "year":
+            select = Select(self.driver.find_element_by_xpath("//select[@name='year']"))
+            select.select_by_value(Value)
+        elif Field == "hour":
+            elem = self.driver.find_element_by_name("year")
+            elem.send_keys(Keys.TAB, Value)  # tab over to hour, which is a not-visible element
+        elif Field == "minute":
+            elem = self.driver.find_element_by_name("year")
+            elem.send_keys(Keys.TAB * 2, Value)  # tab over to minute, which is a not-visible element
+        elif Field == "price":
+            Xpath = "// input[@name = 'price']"
+            input = self.driver.find_element_by_xpath(Xpath)
+            input.send_keys(10 * Keys.BACKSPACE)
+            input.send_keys(Value)
+        elif Field == "opt_in_out":
+            Xpath = "// input[ @ name = 'private']"
+            x = self.driver.find_element_by_xpath(Xpath)
+            x.click()  # click on the checkbox to deselect
+        elif Field == "password_protect":
+            Xpath = "// input[ @ name = 'passwordProtect']"
+            x = self.driver.find_element_by_xpath(Xpath)
+            x.click()  # click on the checkbox to select
+
+
+        # Submit
+        Xpath = "// input[ @ type = 'submit']"
+        button = self.driver.find_element_by_xpath(Xpath)
+        button.click()
+
+    def toggle_event_off_and_on_sale(self, event_id):
+        self.driver.get(self.base_url + "/index.php/admin/toggle_live/" + str(event_id))
+
+    def event_is_off_sale(self, event_id):
+        self.driver.get(self.base_url + "/index.php/event/id/" + str(event_id))
+        http = self.driver.page_source
+        return ("Not on sale" in http)
+
+    def clone_event(self, event_id):
+        self.driver.get(self.base_url + "/index.php/add/event/" + str(event_id) + "/clone")
+        # Submit
+        Xpath = "// input[ @ type = 'submit']"
+        button = self.driver.find_element_by_xpath(Xpath)
+        button.click()
+
+
+    def check_event_details(self, event_id):
+        '''
+        :param event_id: id for the event
+        :return: http text for the event page
+        '''
+        self.driver.get(self.base_url + "/index.php/event/id/" + str(event_id))
+        http = self.driver.page_source
+        return http
+
+    def get_live_events(self, single_row=None):
+        '''
+        Gets all live events for the PVA
+        :return: a list of events, each event represented by a dict
+        '''
+
+        list_of_live_events = []
+
+        self.driver.get(self.base_url + "/index.php/dashboard")
+        Xpath = "// div[@class = 'TableWrapper']"
+        tables = self.driver.find_elements_by_xpath(Xpath)
+        Xpath = "// tr[ *]"
+        table = tables[0].find_elements_by_xpath(Xpath)
+
+        while len(table[0].text) == 0:  # make sure all cells are populated
+            # print("Table not yet populated, sleeping......")
+            time.sleep(2)
+
+        table = table[1:-1]  # trim headers and footer
+
+        table_length = (len(table))
+        if single_row == "single_row":
+            table_length = 1
+
+        for row in range(table_length):  # bug when looping through table - Use len counter instead
+            try:
+                cells = table[row].find_elements_by_tag_name("td")
+                links = table[row].find_elements_by_tag_name("a")
+                event_id = links[0].get_attribute('href').split("/")[-1]
+                list_of_live_events.append({"name": cells[0].text,
+                                            "event_id": event_id,
+                                            "date_time": cells[1].text,
+                                            "venue": cells[2].text, })
+            except:
+                pass
+
+        return list_of_live_events
+
+    def create_series(self, seriesname="New Series", eventlist=None):
         '''
         Create a Series out of a list of created events
         :param seriesname: Str name of the series
@@ -295,7 +583,7 @@ class UserPVA(BrowserInstance):
         :return: Tuple of str Series ID and Name
         '''
         self.driver.get(self.base_url + "/add/series")
-        self.eventlist = eventlist
+        eventlist = eventlist
 
         #Series Name
         Xpath = "// input[@name = 'name']"
@@ -353,8 +641,8 @@ class UserPVA(BrowserInstance):
     async def scan_ticket(session, url):
         '''
         Replicates the process of sending a http request when scanning in a ticket
-        :param ticket_url: url for ticket confirmation
-        :param ticket_id: id that is appended to url http request
+        :param session:
+        :param url: url for ticket confirmation
         :return: tuple responce code (200 = ok) followed by accept/reject string
         '''
         with async_timeout.timeout(30):
@@ -374,6 +662,54 @@ class UserPVA(BrowserInstance):
 
         return status, msg
 
+    def buy_tickets(self, event_id, no_of_tickets=1):
+        ''' Buy tickets
+        :param event_id: int of event id - converted to str
+        :param no_of_tickets: (int) Number of tickets to buy - defaults to 1
+        :return: int(ticket id)
+        '''
+
+        event_id = str(event_id)
+        no_of_tickets = no_of_tickets
+
+        # Go to the buy tickets page
+        self.driver.get(self.base_url + "/buy/id/{}".format(event_id))
+
+        # increase tickets
+        self._click_button("+", times=no_of_tickets - 1)
+
+        buttons = self.driver.find_elements_by_css_selector('.button')
+        buttons[0].click()
+
+        # Page refreshed to recalc cost of tickets. Get buttons again and submit form
+        buttons = self.driver.find_elements_by_css_selector('.button')
+        buttons[1].click()
+
+        # Populate custom field
+        Xpath = "// input[ @ name = 'customField']"
+        elem = self.driver.find_element_by_xpath(Xpath)
+        elem.send_keys("Testing customField")
+
+        # Details page. Untick email options
+        checkbox_dict = {"ticketlab_optin": False,
+                         "promoter_optin": False, }
+        for k, v in checkbox_dict.items():
+            Xpath = "// input[ @ name = '" + k + "']"
+            x = self.driver.find_element_by_xpath(Xpath)
+            x.click()  # click on the checkbox to deselect
+
+        # Submit
+        Xpath = "// input[ @ type = 'submit']"
+        button = self.driver.find_element_by_xpath(Xpath)
+        button.click()
+
+        # Get Ticket ID
+        Ticket_id = None
+        Xpath = "// img[contains(@src, '{}/images/qrs/')]".format(self.base_url)
+        img = self.driver.find_element_by_xpath(Xpath)
+
+        # return ticket id
+        return img.get_attribute("src").split("/")[-1].split(".")[0]
 
 
 
@@ -441,6 +777,7 @@ class StressTest():
             tasks.append(asyncio.ensure_future(worker(q)))
 
         completed_results = loop.run_until_complete(asyncio.gather(*tasks))
+        loop.close()
 
         results = []
         for result in completed_results:
@@ -455,5 +792,4 @@ class StressTest():
 
         return results_dict, status_dict
 
-        loop.close()
 
