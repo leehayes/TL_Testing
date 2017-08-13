@@ -65,5 +65,3 @@ def before_feature(context, feature):
             x = context.browser.buy_tickets(event_id, 2)
             ticket_id_list.append(x)
 
-        print(context.events)
-        print(ticket_id_list)
