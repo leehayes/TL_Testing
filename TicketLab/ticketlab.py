@@ -41,6 +41,13 @@ class BrowserInstance:
             self.chromedriver = r"{}TL_Testing/TicketLab/driver/chromedriver".format(MY_DIR)
         else:
             self.chromedriver = r"{}TL_Testing/TicketLab/driver/chromedriverMac".format(MY_DIR)
+
+            #FF
+            #binary = FirefoxBinary('TL_Testing/TicketLab/driver/geckodriver')
+            #self.driver = webdriver.Firefox(firefox_binary=binary)
+            #self.firefoxdriver = r"{}TL_Testing/TicketLab/driver/geckodriver".format(MY_DIR)
+            #self.driver = webdriver.Firefox()
+
         self.driver = webdriver.Chrome(self.chromedriver)
         # driver.set_window_position(-10000, 0)
         self.driver.set_page_load_timeout(30)
