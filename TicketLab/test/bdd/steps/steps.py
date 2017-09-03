@@ -2,7 +2,9 @@ from collections import namedtuple
 from datetime import datetime, timedelta
 import random
 import string
+import time
 
+from selenium.webdriver.common.keys import Keys
 from behave import *
 from dateutil.relativedelta import relativedelta
 from hamcrest import *
@@ -54,7 +56,13 @@ def step_logout(context, ):
 @then("I am logged out")
 def step_confirm_logged_out(context, ):
     assert_that(("loginButton" in context.browser.text), equal_to(True))
+    assert_that(("logoutButton" in context.browser.text), equal_to(False))
 
+
+@then("I am logged in")
+def step_confirm_logged_out(context, ):
+    assert_that(("loginButton" in context.browser.text), equal_to(False))
+    assert_that(("logoutButton" in context.browser.text), equal_to(True))
 
 @when("I enter and submit a new {cost} event in {time_unit} {time_measure} time")
 def step_create_single_event(context, cost, time_unit, time_measure):
@@ -196,8 +204,8 @@ def step_go_to_edit_event_url(context):
 
 @then("I select the event and choose to buy {no_of_tickets} tickets")
 def step_buy_tickets(context, no_of_tickets):
-    ticket_id = context.browser.buy_tickets(context.events[0], int(no_of_tickets))
-    assert_that(len(ticket_id), greater_than_or_equal_to(7))
+    context.ticket_id = context.browser.buy_tickets(context.events[0], int(no_of_tickets))
+    assert_that(len(context.ticket_id), greater_than_or_equal_to(7))
 
 @given("I am not a registered user")
 def step_change_context_browser_to_unregistered(context):
@@ -216,6 +224,7 @@ def step_select_tickets_and_submit(context, no_of_tickets):
 
 @then("There will be no event called {event_name} publicly visible")
 def step_opt_out_not_visible(context, event_name):
+    time.sleep(200)
     text = context.browser.text
     context.browser.event_name = event_name
     assert_that((event_name in text), equal_to(False))
@@ -242,3 +251,28 @@ def step_enter_random_details(context, email):
     else:
         email = emails.get(email, email)
     context.browser.enter_user_random_details(email, context.browser.username, context.browser.user_surname)
+
+
+@given("I go to the allocation list url")
+def step_go_to_allocation_list_url(context):
+    context.browser.go_to_url("/index.php/event/allocation/" + str(context.events[0]))
+
+
+@given("I click the {button_text} button and enter {scanner_name}")
+def step_click_a_button(context, scanner_name, button_text):
+    context.scanner_name = scanner_name
+    context.browser.go_to_url("/index.php/event/allocation/" + str(context.events[0]))
+    context.browser._click_button(button_text)
+
+    Xpath = "//input[@name='name']"
+    elem = context.browser.driver.find_element_by_xpath(Xpath)
+    elem.send_keys(scanner_name)
+    elem.send_keys(Keys.TAB)
+    elem.send_keys(Keys.ENTER)
+
+
+@then("I get a verification id")
+def step_get_verification_id(context):
+    Xpath = "//p[*]"
+    txt = context.browser.driver.find_elements_by_xpath(Xpath)
+    print(txt[-1].text)

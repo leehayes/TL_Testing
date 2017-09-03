@@ -4,6 +4,7 @@ Feature: Users can log in and out
 
   Scenario Outline: Log in and out as a Punter or PVA user
     Given I have logged in with <Email> and Password <Password>
+    Then I am logged in
     Then I'll see <Username> on the page
     Given I click the logout button
     Then I am logged out

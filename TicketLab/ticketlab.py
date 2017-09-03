@@ -173,7 +173,6 @@ class BrowserInstance:
         Ticket_id = None
         Xpath = "// img[contains(@src, '{}/images/qrs/')]".format(self.base_url)
         img = self.driver.find_element_by_xpath(Xpath)
-        time.sleep(300)
 
     @property
     def text(self):
